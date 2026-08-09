@@ -1,0 +1,1246 @@
+schema_version: 2
+status: active_modeling_seed
+last_reviewed: 2026-08-08
+
+project:
+  name: balmoral_house
+  building_class_assumption: class_1a_detached_dwelling
+  jurisdiction: null
+  notes:
+    - Confirm the Australian state or territory before treating any regulatory value as applicable.
+    - This manifest contains modeling defaults, not engineering, certification, or compliance approval.
+
+units:
+  system: metric
+  length: metres
+  angle: degrees
+  blender_scale_length: 1.0
+
+regulatory_context:
+  national_baseline: NCC_2022_Amendment_2
+  adoption_note: NCC_2025 adoption must be checked for the selected jurisdiction.
+  ncc_room_height_minimums_m:
+    habitable_room_excluding_kitchen: 2.4
+    kitchen: 2.1
+    corridor_or_passage: 2.1
+    bathroom_laundry_or_similar: 2.1
+    stairway_ramp_or_landing: 2.0
+  masonry_veneer_cavity_range_m:
+    minimum: 0.025
+    maximum: 0.075
+  references:
+    - title: NCC editions and current status
+      url: https://ncc.abcb.gov.au/editions-national-construction-code
+    - title: NCC Part 10.3 Room heights
+      url: https://ncc.abcb.gov.au/editions/ncc-2022/adopted/housing-provisions/10-health-and-amenity/part-103-room-heights
+    - title: NCC Part 5.7 Weatherproofing of masonry
+      url: https://ncc.abcb.gov.au/editions/ncc-2022/adopted/housing-provisions/5-masonry/part-57-weatherproofing-masonry
+
+source_plan:
+  image: Image/floorplan1.jpg
+  exterior_reference: Image/main.jpg
+  reference_object: REF_FLOORPLAN_GROUND
+  reference_collection: 00_REFERENCE
+  plane_z_m: -0.02
+  axis_plane: XY
+  principal_axes_aligned: true
+  calibration:
+    method: labelled_room_dimensions
+    status: provisional
+    pixels_per_metre: 25.4
+    crop_pixels:
+      left: 500
+      top: 170
+      right: 830
+      bottom: 705
+    derived_reference_size_m:
+      x: 12.992126
+      y: 21.062992
+    note: Replace with a surveyed or explicitly confirmed dimension when available.
+
+modeling_defaults:
+  level: GROUND
+  floor_level_z_m: 0.0
+  wall_height_m: 2.4
+  level_changes:
+    family_room:
+      floor_drop_m: 0.34
+      riser_count: 2
+      riser_height_m: 0.17
+      tread_depth_m: 0.28
+      ceiling_datum_m: 2.40
+      status: provisional_plan_and_standard_step_assumption
+  external_wall:
+    construction_assumption: brick_veneer_on_timber_frame
+    total_thickness_m: 0.25
+    components_m:
+      brick_veneer: 0.11
+      drained_cavity: 0.04
+      timber_frame: 0.09
+      internal_lining: 0.01
+    status: editable_modeling_assumption
+  internal_wall:
+    construction_assumption: lined_timber_stud_partition
+    total_thickness_m: 0.11
+    components_m:
+      timber_frame: 0.09
+      lining_each_side: 0.01
+    status: editable_modeling_assumption
+  windows:
+    boolean_solver: exact
+    cutter_clearance_through_host_m: 0.10
+    habitable_room:
+      sill_height_m: 0.90
+      head_height_m: 2.10
+    service_room:
+      sill_height_m: 1.20
+      head_height_m: 2.10
+    wet_room:
+      sill_height_m: 1.50
+      head_height_m: 2.10
+    status: provisional_modeling_assumptions
+  doors:
+    boolean_solver: exact
+    cutter_clearance_through_host_m: 0.10
+    sill_height_m: 0.0
+    head_height_m: 2.04
+    status: provisional_plan_trace_and_standard_head_assumption
+  geometric_tolerance_m: 0.001
+  working_grid_m: 0.01
+
+wall_workflow:
+  collection: ARCH_Walls
+  object_policy: one_wall_section_per_object
+  join_wall_sections: false
+  naming_pattern: WALL_<LEVEL>_<ORIENTATION_OR_ZONE>_<NNN>
+  first_sequence:
+    - external_wall_sections
+    - internal_wall_sections
+    - verify_dimensions_and_adjacencies
+  defer_until_wall_pass_verified:
+    - floors
+    - ceilings
+    - roofs
+    - doors
+    - fixtures
+    - furnishings
+  corrections:
+    - id: WALL_FIX_KITCHEN_LOUNGE_001
+      object: WALL_GROUND_INT_KITCHEN_LOUNGE_022
+      plan_start_px: [159, 263]
+      plan_end_px: [244, 263]
+      thickness_m: 0.11
+      height_m: 2.4
+      status: provisional_plan_trace
+    - id: WALL_FIX_FAMILY_KITCHEN_002
+      object: WALL_GROUND_INT_FAMILY_KITCHEN_023
+      plan_start_px: [130, 178]
+      plan_end_px: [234, 178]
+      thickness_m: 0.11
+      bottom_z_m: -0.34
+      top_z_m: 2.40
+      status: provisional_plan_trace
+
+opening_workflow:
+  cutter_collection: ARCH_Opening_Cutters
+  window_collection: ARCH_Windows
+  door_collection: ARCH_Doors
+  host_wall_policy: retain_one_object_per_wall_section
+  cutter_host_link: custom_property_host_wall
+  parent_cutter_to_host: false
+  boolean_operation: difference
+  boolean_solver: exact
+  prefer_live_boolean_modifiers: true
+  implementation_mode: recoverable_baked_working_walls
+  working_wall_modifiers_applied: true
+  recovery_base_collection: ARCH_Wall_Bases
+  recovery_base_naming_pattern: BASE_<HOST_WALL_NAME>
+  cutter_normals: outward
+  cutter_naming_pattern: CUT_<TYPE>_<ID>
+  modifier_naming_pattern: BOOL_<TYPE>_<ID>
+  cutter_display: wire
+  cutter_render_visibility_after_bake: hidden
+  verification: ray_through_opening_center
+
+openings:
+  windows:
+    - id: W01
+      host_wall: WALL_GROUND_EXT_NORTH_SERVICE_001
+      plan_start_px: [128, 28]
+      plan_end_px: [142, 28]
+      width_m: 0.551181
+      sill_height_m: 1.50
+      head_height_m: 2.10
+      room_type: wet_room
+      confidence: provisional
+    - id: W02
+      host_wall: WALL_GROUND_EXT_WEST_BED1_020
+      plan_start_px: [94, 86]
+      plan_end_px: [94, 140]
+      width_m: 2.125984
+      sill_height_m: 0.90
+      head_height_m: 2.10
+      room_type: habitable_room
+      confidence: provisional
+    - id: W05
+      host_wall: WALL_GROUND_EXT_EAST_FAMILY_MEALS_004
+      plan_start_px: [311, 213]
+      plan_end_px: [311, 259]
+      width_m: 1.811024
+      sill_height_m: 0.90
+      head_height_m: 2.10
+      room_type: habitable_room
+      confidence: provisional
+    - id: W06
+      host_wall: WALL_GROUND_EXT_EAST_LOUNGE_006
+      plan_start_px: [287, 302]
+      plan_end_px: [287, 357]
+      width_m: 2.165354
+      sill_height_m: 0.90
+      head_height_m: 2.10
+      room_type: habitable_room
+      confidence: provisional
+    - id: W07
+      host_wall: WALL_GROUND_EXT_SOUTH_LOUNGE_007
+      plan_start_px: [239, 358]
+      plan_end_px: [286, 358]
+      width_m: 1.850394
+      sill_height_m: 0.90
+      head_height_m: 2.10
+      room_type: habitable_room
+      confidence: provisional
+    - id: W08
+      host_wall: WALL_GROUND_EXT_EAST_BED4_010
+      plan_start_px: [235, 443]
+      plan_end_px: [235, 487]
+      width_m: 1.732283
+      sill_height_m: 0.90
+      head_height_m: 2.10
+      room_type: habitable_room
+      confidence: provisional
+    - id: W09
+      host_wall: WALL_GROUND_EXT_SOUTH_BED4_011
+      plan_start_px: [185, 488]
+      plan_end_px: [234, 488]
+      width_m: 1.929134
+      sill_height_m: 0.90
+      head_height_m: 2.10
+      room_type: habitable_room
+      confidence: provisional
+    - id: W10
+      host_wall: WALL_GROUND_EXT_SOUTH_BED3_013
+      plan_start_px: [65, 505]
+      plan_end_px: [148, 505]
+      width_m: 3.267717
+      sill_height_m: 0.90
+      head_height_m: 2.10
+      room_type: habitable_room
+      confidence: provisional
+    - id: W11
+      host_wall: WALL_GROUND_EXT_WEST_BEDS_014
+      plan_start_px: [52, 339]
+      plan_end_px: [52, 390]
+      width_m: 2.007874
+      sill_height_m: 0.90
+      head_height_m: 2.10
+      room_type: habitable_room
+      confidence: provisional
+    - id: W12
+      host_wall: WALL_GROUND_EXT_WEST_LAUNDRY_018
+      plan_start_px: [52, 201]
+      plan_end_px: [52, 225]
+      width_m: 0.944882
+      sill_height_m: 1.20
+      head_height_m: 2.10
+      room_type: service_room
+      confidence: provisional
+    - id: W13
+      host_wall: WALL_GROUND_EXT_WEST_LAUNDRY_018
+      plan_start_px: [52, 249]
+      plan_end_px: [52, 261]
+      width_m: 0.472441
+      sill_height_m: 1.50
+      head_height_m: 2.10
+      room_type: wet_room
+      confidence: provisional
+    - id: W14
+      host_wall: WALL_GROUND_EXT_STEP_MEALS_005
+      plan_start_px: [287, 260]
+      plan_end_px: [310, 260]
+      width_m: 0.905512
+      sill_height_m: 0.90
+      head_height_m: 2.10
+      room_type: habitable_room
+      confidence: provisional_plan_trace
+  doors:
+    - id: D01
+      host_wall: WALL_GROUND_INT_SERVICE_BED1_002
+      plan_start_px: [95, 62]
+      plan_end_px: [113, 62]
+      width_m: 0.708661
+      sill_height_m: 0.0
+      head_height_m: 2.04
+      door_type: cavity_slider
+      zone: wir_to_bedroom_1
+      confidence: provisional_plan_trace
+    - id: D02
+      host_wall: WALL_GROUND_INT_SERVICE_BED1_002
+      plan_start_px: [151, 62]
+      plan_end_px: [168, 62]
+      width_m: 0.669291
+      sill_height_m: 0.0
+      head_height_m: 2.04
+      door_type: cavity_slider
+      zone: ensuite_to_bedroom_1
+      confidence: provisional_plan_trace
+    - id: D03
+      host_wall: WALL_GROUND_INT_BED1_HALL_004
+      plan_start_px: [115, 157]
+      plan_end_px: [136, 157]
+      width_m: 0.826772
+      sill_height_m: 0.0
+      head_height_m: 2.04
+      door_type: hinged_internal
+      zone: bedroom_1_to_hall
+      confidence: provisional_plan_trace
+    - id: D04
+      host_wall: WALL_GROUND_EXT_NORTH_LAUNDRY_019
+      plan_start_px: [53, 185]
+      plan_end_px: [72, 185]
+      width_m: 0.748031
+      sill_height_m: 0.0
+      head_height_m: 2.04
+      door_type: hinged_external
+      zone: laundry_external
+      confidence: provisional_plan_trace
+    - id: D05
+      host_wall: WALL_GROUND_INT_LAUNDRY_SOUTH_009
+      plan_start_px: [84, 242]
+      plan_end_px: [101, 242]
+      width_m: 0.669291
+      sill_height_m: 0.0
+      head_height_m: 2.04
+      door_type: hinged_internal
+      zone: laundry_to_service_hall
+      confidence: provisional_plan_trace
+    - id: D06
+      host_wall: WALL_GROUND_INT_BATH_NORTH_010
+      plan_start_px: [83, 266]
+      plan_end_px: [104, 266]
+      width_m: 0.826772
+      sill_height_m: 0.0
+      head_height_m: 2.04
+      door_type: hinged_internal
+      zone: bath_to_hall
+      confidence: provisional_plan_trace
+    - id: D07
+      host_wall: WALL_GROUND_INT_BATH_BED2_HALL_014
+      plan_start_px: [132, 327]
+      plan_end_px: [132, 349]
+      width_m: 0.866142
+      sill_height_m: 0.0
+      head_height_m: 2.04
+      door_type: hinged_internal
+      zone: bedroom_2_to_hall
+      confidence: provisional_plan_trace
+    - id: D08
+      host_wall: WALL_GROUND_INT_BED2_BED3_015
+      plan_start_px: [132, 405]
+      plan_end_px: [157, 405]
+      width_m: 0.984252
+      sill_height_m: 0.0
+      head_height_m: 2.04
+      door_type: hinged_internal
+      zone: bedroom_4_to_entry
+      confidence: provisional_plan_trace
+    - id: D09
+      host_wall: WALL_GROUND_INT_ENTRY_BED4_017
+      plan_start_px: [159, 405]
+      plan_end_px: [184, 405]
+      width_m: 0.984252
+      sill_height_m: 0.0
+      head_height_m: 2.04
+      door_type: hinged_internal
+      zone: bedroom_3_to_entry
+      confidence: provisional_plan_trace
+    - id: D10
+      host_wall: WALL_GROUND_EXT_EAST_ENTRY_008
+      plan_start_px: [220, 371]
+      plan_end_px: [220, 392]
+      width_m: 0.826772
+      sill_height_m: 0.0
+      head_height_m: 2.04
+      door_type: hinged_external
+      zone: main_entry
+      confidence: provisional_plan_trace
+    - id: D11
+      replaces_opening_id: W03
+      host_wall: WALL_GROUND_EXT_NORTH_FAMILY_003
+      plan_start_px: [178, 62]
+      plan_end_px: [236, 62]
+      width_m: 2.283465
+      sill_height_m: -0.34
+      sill_height_relative_to_family_floor_m: 0.0
+      head_height_m: 2.10
+      door_type: external_sliding_glazed
+      panel_configuration: two_panel_one_fixed_one_sliding
+      zone: family_external
+      confidence: confirmed_type_provisional_frame_and_panel_configuration
+    - id: D12
+      replaces_opening_id: W04
+      host_wall: WALL_GROUND_EXT_NORTH_FAMILY_003
+      plan_start_px: [243, 62]
+      plan_end_px: [310, 62]
+      width_m: 2.637795
+      sill_height_m: -0.34
+      sill_height_relative_to_family_floor_m: 0.0
+      head_height_m: 2.10
+      door_type: external_sliding_glazed
+      panel_configuration: two_panel_one_fixed_one_sliding
+      zone: family_external
+      confidence: confirmed_type_provisional_frame_and_panel_configuration
+  open_plan_cutouts:
+    - id: P01
+      host_wall: WALL_GROUND_INT_KITCHEN_LOUNGE_022
+      plan_start_px: [219, 263]
+      plan_end_px: [240, 263]
+      width_m: 0.826772
+      sill_height_m: 1.00
+      head_height_m: 2.10
+      opening_type: high_pass_through
+      zone: kitchen_to_lounge
+      confidence: confirmed_high_opening_provisional_elevation
+    - id: P02
+      host_wall: WALL_GROUND_INT_FAMILY_KITCHEN_023
+      plan_start_px: [174, 178]
+      plan_end_px: [202, 178]
+      width_m: 1.102362
+      sill_height_m: 1.00
+      head_height_m: 2.10
+      opening_type: high_view_pass_through
+      zone: kitchen_to_family
+      confidence: confirmed_high_opening_provisional_elevation
+
+level_changes:
+  - id: FAMILY_DROP_001
+    room: family
+    floor_object: FLOOR_GROUND_FAMILY_DROPPED_001
+    floor_plan_min_px: [170, 62]
+    floor_plan_max_px: [311, 164]
+    floor_top_z_m: -0.34
+    floor_bottom_z_m: -0.44
+    ceiling_datum_z_m: 2.40
+    resolved_floor_outline_m:
+      - [0.1969, 4.3373]
+      - [0.3332, 4.3373]
+      - [0.3332, 4.0395]
+      - [0.6073, 4.0395]
+      - [0.6073, 4.0748]
+      - [2.7165, 4.0748]
+      - [2.7165, 3.7977]
+      - [5.7480, 3.7977]
+      - [5.7480, 8.0906]
+      - [0.1969, 8.0906]
+    floor_geometry_status: aligned_to_user_adjusted_steps
+    long_steps:
+      span_start_px: [234, 178]
+      span_end_px: [311, 178]
+      objects: [STEP_FAMILY_LONG_01, STEP_FAMILY_LONG_02]
+      geometry_source: user_adjusted_blender_objects
+      resolved_bounds_m:
+        STEP_FAMILY_LONG_01: [2.7165, 3.2374, 5.7480, 3.5176]
+        STEP_FAMILY_LONG_02: [2.7165, 3.5176, 5.7480, 3.7977]
+    hall_steps:
+      span_start_px: [160, 178]
+      span_end_px: [180, 178]
+      travel_end_y_px: 164
+      objects: [STEP_FAMILY_HALL_01, STEP_FAMILY_HALL_02]
+      rotation_z_deg: 90
+      orientation_status: confirmed_user_correction
+      geometry_source: user_adjusted_blender_objects
+      resolved_bounds_m:
+        STEP_FAMILY_HALL_01: [0.0591, 3.2712, 0.3332, 4.3373]
+        STEP_FAMILY_HALL_02: [0.3332, 3.2521, 0.6073, 4.0395]
+    step_block_bottom_z_m: -0.44
+    step_geometry_status: user_adjusted_footprints_cleaned_and_supported
+    covering_slab_correction:
+      object: FLOOR_GROUND_SLAB_001
+      observed_erroneous_scale: [-4.301, -4.301, -4.301]
+      corrected_scale: [1.0, 1.0, 1.0]
+      recovery_base: BASE_FLOOR_GROUND_SLAB_001
+      void_cutters:
+        - CUT_FLOOR_FAMILY_DROP_001
+        - CUT_FLOOR_FAMILY_LONG_STEPS_001
+        - CUT_FLOOR_FAMILY_HALL_STEP_01
+        - CUT_FLOOR_FAMILY_HALL_STEP_02
+      status: corrected_and_recoverably_baked
+    confidence: provisional_plan_trace_and_step_dimensions
+
+walkthrough:
+  active_mode: fast_solid
+  viewport_shading: solid
+  brick_veneer_modifiers:
+    viewport: disabled
+    render: enabled
+  landscape_plants_viewport: hidden
+  roof_and_ceiling_viewport: hidden
+  render_visibility_preserved: true
+  toggle_text_block: WALKTHROUGH_FAST_MODE.py
+  status: performance_optimized_without_render_quality_loss
+
+exterior_finishes:
+  reference_image: Image/main.jpg
+  brickwork:
+    collection: ARCH_Exterior_Brickwork
+    delivery: separate_exterior_veneer_objects
+    bond: running_bond
+    nominal_brick_size_m: [0.230, 0.110, 0.076]
+    nominal_mortar_joint_m: 0.010
+    main_finish:
+      material_xz: MAT_EXT_BRICK_RED_XZ
+      material_yz: MAT_EXT_BRICK_RED_YZ
+      colour_family: consistent_mid_red_terracotta
+      mortar_colour: light_grey_beige
+      tone_correction:
+        date: 2026-08-08
+        reason: >-
+          User: the first-level bricks in Image/main.jpg are one samish red tone,
+          not a mix. The Brick Texture was picking 50/50 between an almost-black
+          Color1 (sRGB 61,32,23) and a mid red-brown Color2 (sRGB 137,74,43),
+          which read as a heavy patchwork at every distance.
+        color1_srgb: [150, 90, 68]
+        color2_srgb: [174, 110, 84]
+        mortar_srgb: [178, 172, 158]
+        soiling_multiplier_range: [0.84, 1.07]   # was 0.62-1.20
+        roughness_range: [0.58, 0.72]
+        note: >-
+          Per-brick variation retained but narrowed to two close shades of the same
+          red. Brick module and 10 mm joint unchanged.
+        hue_status: >-
+          Hue judged against a dusk photograph, so it is approximate. Reference
+          patch sampled at sRGB ~167,122,92 which is warmer and more desaturated
+          than typical daylight brick.
+    lower_finish:
+      material_xz: MAT_EXT_BRICK_DARK_BASE_XZ
+      material_yz: MAT_EXT_BRICK_DARK_BASE_YZ
+      colour_family: dark_brown
+    veneer_thickness_m: 0.012
+    shader_delivery: procedural_pbr_with_mortar_relief_colour_variation_and_micro_bump
+    reference_status: confirmed_from_exterior_photo
+    geometry_status: first_pass_exterior_only_non_conflicting_with_interior_work
+
+interior_finishes:
+  wall_lining:
+    material: MAT_INT_PLASTER
+    construction_assumption: set_and_painted_plasterboard
+    shader_delivery: >-
+      procedural - off-white low-sheen paint over a two-stage bump (large sheet
+      undulation plus fine roller stipple). Swap for scanned maps in the
+      photoreal pass; the bump chain is the only thing to rewire.
+    applied:
+      internal_walls:
+        objects: WALL_GROUND_INT_* and WALL_GROUND_FAMILY_DROP_*_INFILL_*
+        count: 25
+        coverage: all_faces
+      external_walls:
+        objects: WALL_GROUND_EXT_*
+        count: 20
+        coverage: >-
+          every inward-facing face including boolean opening reveals; the single
+          outward skin face of each wall is left on MAT_WALL_EXTERNAL_BLOCKOUT
+          because the brick veneer in ARCH_Exterior_Brickwork sits over it
+        slot_convention:
+          index_0: MAT_WALL_EXTERNAL_BLOCKOUT (outer skin, exterior pass owns it)
+          index_1: MAT_INT_PLASTER (all interior-facing faces)
+    exterior_face_classification:
+      method: derived_from_object_name_orientation_token
+      tokens: {_EXT_NORTH_: +Y, _EXT_SOUTH_: -Y, _EXT_EAST_: +X, _EXT_WEST_: -X}
+      fallback: away_from_house_centroid_along_the_wall_thickness_axis
+      manual_corrections:
+        - object: WALL_GROUND_EXT_STEP_BED4_009
+          corrected_exterior_normal: [0, 1, 0]
+          reason: >-
+            Re-entrant footprint step - bedroom 4 projects further east than the
+            entry, so the outside is on the NORTH face. The centroid fallback
+            picked south. Corrected manually.
+      verification: >-
+        All 20 external walls cross-checked against the independently authored
+        BRICK_VENEER_* objects in ARCH_Exterior_Brickwork; every exterior normal
+        matches the veneer placement.
+    fixed_defects:
+      - >-
+        Boolean opening reveals on WALL_GROUND_EXT_NORTH_FAMILY_003 (7 faces) and
+        WALL_GROUND_EXT_WEST_LAUNDRY_018 (4 faces) were on
+        MAT_BOOLEAN_CUTTER_TRANSPARENT and rendered invisible. Now plastered.
+    not_yet_finished:
+      - ceilings_use_MAT_INT_CEILING_PAINT_placeholder
+      - no_skirting_or_architraves_except_the_kitchen_render_set
+      - wet_area_wall_tiling_not_modelled
+    status: applied_and_verified
+  floor_finishes:
+    family_room_carpet:
+      material: MAT_INT_CARPET
+      description: light oatmeal cut pile, worn, per Image/kitchen.jpg
+      shader_delivery: >-
+        procedural - broad soiling blotches over a fine pile bump, with Principled
+        sheen for the fabric falloff. No displacement or hair; adequate at room
+        distance, will need real maps for close-ups.
+      applied_to:
+        - FLOOR_GROUND_FAMILY_DROPPED_001
+        - STEP_FAMILY_LONG_01
+        - STEP_FAMILY_LONG_02
+        - STEP_FAMILY_HALL_01
+        - STEP_FAMILY_HALL_02
+      method: >-
+        added as an extra material slot and assigned to every face except the
+        downward-facing one; the original MAT_FAMILY_DROPPED_FLOOR /
+        MAT_FAMILY_STEPS remain in slot 0 and are recoverable
+      steps_carpeted: true
+      steps_carpeted_note: >-
+        Treads and risers carpeted to match the room. The photo shows a light
+        band at the level change consistent with carpeted treads, but the
+        junction detail is not clearly resolvable at that distance.
+      confidence: colour_and_type_from_photo_provisional
+  ceiling_fans:
+    count: 2
+    room: family
+    objects: [SET_FAN_FAMILY_001, SET_FAN_FAMILY_002]
+    collection: RENDER_Kitchen_Photoreal
+    type: four_blade_metal_blade_fan_on_short_downrod
+    blade_span_m: 1.22
+    ceiling_fixing_z_m: 2.400
+    blade_plane_z_m: 2.058
+    blade_pitch_deg: 12
+    positions_m: [[1.78, 5.95], [4.22, 5.95]]
+    position_status: >-
+      evenly spaced on the family room's long axis; the photo shows two fans but
+      does not fix their coordinates. Not surveyed.
+    materials: [MAT_INT_FAN_BODY, MAT_INT_FAN_BLADE]
+    confidence: type_from_photo_positions_assumed
+
+window_resize_2026_08_09:
+  reason: >-
+    User, against Image/main.jpg: windows are taller than modelled and must extend
+    further down; and several ran so close to a wall end that no brick pier read at
+    the building corners.
+  sill_change_m: {from: 0.90, to: 0.45}
+  head_unchanged_m: 2.10
+  applies_to: [W02, W05, W06, W07, W08, W09, W10, W11, W14]
+  excluded: >-
+    W01 and W13 (wet rooms, sill 1.50) and W12 (service, sill 1.20) keep their
+    privacy sills.
+  corner_windows:
+    correction: >-
+      My first pass added a 0.50 m brick pier at every corner. That was wrong - the
+      user confirmed the glass WRAPS these corners with no brick between the two
+      windows. The original trace put all three pairs 0.164 m off their corners,
+      which is consistent with them always having been corner windows.
+    pairs:
+      - {windows: [W06, W07], corner_m: [4.928, -3.688], room: lounge}
+      - {windows: [W08, W09], corner_m: [2.881, -8.806], room: bedroom_4}
+      - {windows: [W05, W14], corner_m: [5.873, 0.170], room: meals}
+    detail: >-
+      Each cutter overshoots past the wall end so the boolean removes the corner
+      brickwork entirely. The two jambs that would meet at the corner are omitted
+      and replaced by a single 90 mm mullion post (WINDOW_CORNER_POST_*).
+    superseded: the 0.50 m minimum pier below now applies only to non-corner ends
+  minimum_corner_pier_m: 0.50
+  repositioned:
+    W05: {was: [0.335, 2.146], now: [0.670, 2.481], was_gap: 0.164}
+    W06: {was: [-3.524, -1.358], now: [-3.188, -1.022], was_gap: 0.164}
+    W07: {was: [2.913, 4.764], now: [2.577, 4.428], was_gap: 0.164}
+    W08: {was: [-8.642, -6.909], now: [-8.306, -6.573], was_gap: 0.164}
+    W09: {was: [0.787, 2.717], now: [0.451, 2.381], was_gap: 0.164}
+    W13: {was: [0.256, 0.728], now: [0.395, 0.867], was_gap: 0.361}
+    W14:
+      was: [4.803, 5.709]
+      now: [5.028, 5.523]
+      note: >-
+        narrowed rather than moved - the host wall is only 1.195 m long, so the
+        original 0.906 m opening could not clear both corners. Piers now 0.35 m.
+  rebuild_method: >-
+    Openings are baked into the wall meshes, so each affected wall was restored from
+    its BASE_ recovery copy in ARCH_Wall_Bases, then every cutter with a matching
+    host_wall custom property was re-applied. 10 external walls rebuilt.
+  veneer_rebuild: >-
+    Brick veneer is now generated from the cut wall's exterior faces (material index
+    0), offset 0.5 mm and extruded 12 mm outward. This guarantees the veneer
+    openings always match the wall openings.
+  defect_found_and_fixed: >-
+    First veneer rebuild placed the panels near the world origin - the wall objects
+    have non-identity transforms and the mesh was read in local space without
+    applying matrix_world. Walls rendered showing the orange blockout material.
+    Fixed by baking the world transform into the bmesh before offsetting.
+
+glazing:
+  collection: ARCH_Windows
+  status: first_pass_from_exterior_photo
+  built_for: all 12 window openings (W01, W02, W05-W14)
+  frame:
+    material: MAT_EXT_WINDOW_FRAME
+    finish: white powdercoat aluminium
+    member_width_m: 0.058
+    depth_m: 0.150
+    position: set to the exterior face of the host wall
+  glass:
+    material: MAT_SLIDING_DOOR_GLASS (thin-wall transmissive)
+    thickness_m: 0.006
+  mullions: >-
+    None. A central mullion was initially added to every opening wider than
+    1.40 m; the user corrected this - they are large single-pane windows.
+  not_modelled: [openable sashes, reveals, sills, head flashings, D10 front door leaf]
+
+bathroom:
+  collection: FIT_Bathroom
+  status: provisional_from_interior_photo_and_plan
+  source: {photo: Image/bathroom.png, plan: Image/floorplan1.jpg}
+  room_extent_m:
+    main: {x: [-4.324, -1.354], y: [-2.169, -1.020]}
+    upper: {x: [-4.324, -2.063], y: [-1.020, 0.004]}
+    spa_alcove: {x: [-5.269, -4.324], y: [-1.430, -0.105]}
+  finishes:
+    floor: MAT_BATH_FLOOR_TILE, blue 300 mm square, white grout
+    walls: MAT_BATH_WALL_TILE, cream 152 mm square, dado to 1.050
+    alcove_end_wall: tiled full height to 1.800
+    feature_band: MAT_BATH_TILE_FEATURE (blue) with MAT_BATH_TILE_PICTURE inserts
+  fixtures:
+    - spa bath in the alcove with tiled surround (BATH_TUB_001, BATH_SURROUND_001)
+    - vanity 1.119 x 0.590 on the south wall, drawers both sides of a central pair
+      of doors, moulded top with integrated basin, chrome three-piece tapware
+    - frameless mirror 1.200 x 1.150 above the vanity
+    - close-coupled toilet on the north wall, west of door D06
+    - chrome towel rail with towel, double GPO
+  new_openings:
+    - {id: W15, host: WALL_GROUND_EXT_SOUTH_SPA_015, sill: 0.95, head: 2.05}
+    - {id: W16, host: WALL_GROUND_EXT_NORTH_SPA_017, sill: 0.95, head: 2.05}
+  new_openings_note: >-
+    Added because the photo shows daylight either side of the bath. Recovery
+    bases were created for both spa walls before cutting, per the opening workflow.
+  plan_vs_photo_discrepancy:
+    - >-
+      The floor plan shows a shower recess in the south-east corner and puts the
+      toilet in a separate WC north of the bathroom. The photo shows a toilet in
+      the room and no shower in frame. I followed the photo for the toilet and have
+      not modelled the shower. Worth confirming which is current.
+  revision_2026_08_09:
+    reason: user review of the first bathroom render
+    alcove_extended:
+      shift_m: 0.290 south
+      walls_moved: [WALL_GROUND_EXT_SOUTH_SPA_015 (+ its window W15),
+                    WALL_GROUND_EXT_WEST_SPA_016 (stretched),
+                    WALL_GROUND_EXT_WEST_BEDS_014 (shortened)]
+      alcove_length_m: {was: 1.325, now: 1.615}
+      bath_length_m: {was: 1.195, now: 1.485}
+      note: >-
+        This changes the external footprint - the spa bump-out is 290 mm longer.
+        The roof was rebuilt with the updated rectangle so it still covers it.
+      alignment: alcove south face at Y -1.720, level with the basin front
+    vanity_narrowed:
+      depth_m: {was: 0.590, now: 0.520}
+      basin_width_m: {was: 0.470, now: 0.410}
+      reason: free up floor area
+    door_D06_moved:
+      was_wall: WALL_GROUND_INT_BATH_NORTH_010, x [-3.228, -2.402], width 0.826
+      now_wall: WALL_GROUND_INT_BATH_BED2_HALL_014 (east), y [-1.700, -1.070], width 0.630
+      reason: >-
+        User: the door belongs on the wall opposite the spa. Moved to the east
+        wall, directly facing the alcove. Both walls rebuilt from their BASE_
+        copies - the north wall is now solid (6 faces), the east wall carries D06
+        plus D07 (14 faces).
+      width_source: >-
+        0.630 measured directly off the plan at 34x zoom. The manifest's original
+        trace had 0.826, which was 0.196 too wide.
+    toilet_rebuilt_v2:
+      method: lofted from 7 elliptical profiles, 28 segments
+      form: tapered pedestal flaring to an oval bowl, closed seat/lid, cistern with
+            lid and flush button
+      position_x: -3.600 (mid north wall, so it reads in the right foreground)
+      asset_search: >-
+        Looked for a CC0 toilet model first. Poly Haven's 521-model library has
+        none, and ambientCG's 3D models are surfaces and decor only. Modelled it
+        instead. BlenderKit's free tier is the most likely source if a real
+        sanitaryware asset is wanted later.
+    stale_window_frame_bug: >-
+      Extending the alcove moved WALL_GROUND_EXT_SOUTH_SPA_015 and CUT_WINDOW_W15
+      by 290 mm, but the WINDOW_W15_* frame and glazing were not regenerated, so
+      they stayed at the old position - floating 290 mm proud of the wall, inside
+      the room. Lesson: the frame/glazing generator derives from the cutters and
+      MUST be re-run after any wall or opening move. All 14 windows regenerated.
+    toilet_base_to_wall: >-
+      The lofted pan stopped at Y -0.174 while the wall is at Y 0.004, leaving the
+      cistern floating over a 178 mm gap. Added BATH_WC_PEDESTAL_REAR_001, a
+      rounded pedestal carrying the base back to the wall for the cistern to sit on.
+    window_light_bug: >-
+      Both alcove daylight sources were rotated to emit AWAY from the room - W15
+      (south of the room) pointed south and W16 (north) pointed north. The alcove
+      was lit only by the ceiling fill. Rotations swapped; area lights emit along
+      local -Z, so Rx(+90) gives +Y and Rx(-90) gives -Y.
+    toilet_rebuilt: >-
+      Was a plain rounded box plus a floating cistern. Now a shaped close-coupled
+      suite - narrower pedestal, wider bowl, seat, cistern with lid and flush button.
+    camera_moved: >-
+      The reference photo is shot from the doorway, which is why no opening appears
+      in it. The camera now sits just inside D06 so the door is behind it, giving
+      the reference composition: vanity left, bath alcove ahead, toilet right.
+      The doorway was never a modelling error - it is on the plan.
+  defects_found_and_fixed:
+    - >-
+      SET_CEILING_GROUND sat at Z 2.400, exactly coplanar with the roof soffit, and
+      rendered as solid black. Ceiling dropped to 2.370-2.398. Same root cause as
+      the earlier base-course artifact.
+    - >-
+      WALL_GROUND_EXT_WEST_SPA_016 has inverted mesh normals, so the normal-based
+      exterior/interior material test put the blockout material on its INTERIOR
+      face - visible as an orange band above the alcove tiling. Wall face
+      classification is now done by face POSITION relative to the exterior plane,
+      which is normal-independent. Re-running it also corrected EAST_ENS_002,
+      STEP_BED4_009 and STEP_SOUTH_012.
+
+downloaded_assets:
+  root: C:\Workspace\Blender\assets
+  licence: CC0 for every item below - no attribution required, commercial use permitted
+  hdri:
+    source: Poly Haven
+    files:
+      - kloofendal_48d_partly_cloudy_puresky_4k.hdr   # daylight
+      - qwantani_dusk_1_puresky_4k.hdr                # dusk option
+      - qwantani_dusk_2_puresky_4k.hdr                # dusk, in use
+    sun_location_method: >-
+      Poly Haven's `coords` field is the capture lat/long, NOT the sun position.
+      The sun is found by scanning a downscaled copy of the HDRI for its brightest
+      pixel and converting u,v to a direction. For the daylight sky this returned
+      48.2 deg elevation, matching the "48d" in the asset name.
+  textures:
+    source: ambientCG (2K JPG sets)
+    scale_note: >-
+      Tiling scale is taken from ambientCG's published dimensionX/dimensionY, so
+      textures are physically sized rather than eyeballed.
+    mapping:
+      Bricks051:        {material: MAT_EXT_BRICK_RED_XZ / _YZ, tile_m: 1.25}
+      Bricks097:        {material: MAT_EXT_BRICK_DARK_BASE_XZ / _YZ, tile_m: 1.50,
+                         note: darkened via Hue/Sat value 0.42}
+      RoofingTiles013A: {material: MAT_ROOF_TILE_CHARCOAL, tile_m: 2.90, projection: UV}
+      PavingStones128:  {material: MAT_SITE_PAVING, tile_m: 1.80}
+      Grass005:         {material: MAT_SITE_LAWN, tile_m: 1.10}
+
+dusk_lighting:
+  collection: RENDER_Dusk_Lights
+  world: WORLD_EXTERIOR_DUSK (qwantani_dusk_2_puresky)
+  render_script: EXT_DUSK_RENDER text datablock
+  brief: >-
+    Match the mood of Image/main.jpg - blue hour sky, house lit from within, warm
+    exterior fittings.
+  interior_lamps:
+    count: 10
+    colour_K: 2700
+    height_z_m: 2.15
+    rooms: [lounge x2, bed4, bed3, meals, kitchen, entry, family, bed1, hall]
+  exterior_fittings:
+    count: 2
+    correction: >-
+      First pass invented 12 eaves downlights and 7 garden spike lights. User: the
+      house has only two - one on the corner and one near the entry door. The 19
+      invented fittings were deleted.
+    lights:
+      - {id: DUSK_LIGHT_ENTRY, at_m: [2.44, -3.94, 2.00],
+         note: beside the front door on the entry wall (D10 spans Y -4.902 to -4.075)}
+      - {id: DUSK_LIGHT_CORNER, at_m: [3.02, -5.52, 2.00],
+         note: on the external corner where the footprint steps out to bedroom 4}
+    fittings: DUSK_FITTING_ENTRY, DUSK_FITTING_CORNER (emissive boxes)
+    unresolved: >-
+      "the corner" was interpreted as the bedroom-4 step corner because it is the
+      nearest external corner to the entry. Confirm which corner is meant.
+  sky_grade:
+    hdri: qwantani_dusk_1_puresky (chosen over dusk_2 - measured blue/red ratio
+          1.68 vs 1.42 over the upper hemisphere)
+    world_strength: 0.30
+    tint_multiply: [0.62, 0.80, 1.35]
+    rotation: afterglow placed behind the camera so the view faces the deep blue sky
+    exposure: -0.05
+    rationale: >-
+      Sky held well below the interior lamps so the house carries the exposure -
+      which is how a real blue-hour photograph is metered.
+  lights_not_camera_visible: true
+  eevee_caveat: >-
+    EEVEE does not carry the interior lamps through the transmissive glazing, so it
+    showed flat white windows and was misleading for this scene. All dusk balance
+    decisions were made on low-resolution Cycles tests instead.
+  status: first_pass_positions_assumed_not_surveyed
+
+exterior_render_setup:
+  collection: RENDER_Exterior
+  world: WORLD_EXTERIOR_SKY (Sky Texture, MULTIPLE_SCATTERING, strength 0.50)
+  sun: SUN_EXTERIOR, 5.5 W/m2, elevation 38 deg, azimuth 25 deg south of east
+  camera: CAM_EXTERIOR_FRONT, 40 mm, level (no converging verticals), shift_y -0.04
+  render_script: EXT_PHOTOREAL_RENDER text datablock
+  recipe: {engine: CYCLES, device: CPU, samples: 110, exposure: -0.40,
+           look: AgX - Medium High Contrast, approx_time_1500x900: 7.7_minutes}
+  fixed_defects:
+    - >-
+      Base course boxes were exactly coincident with the BRICK_VENEER_*FAMILY_DROP*
+      panels (same 12 mm thickness, same plane). Cycles rendered the overlap as
+      solid black. Bands are now inset 1 mm per face so nothing is coplanar.
+  known_gaps_for_photorealism:
+    - no landscaping at all - no lawn, driveway, garden beds, fence or planting
+    - roof tiles are flat charcoal with no profile, courses or ridge capping
+    - sun close to head-on to the front elevation, so very little modelling shadow
+    - sky is a plain gradient, no cloud
+    - gutter is a flat band; no profile and no downpipes
+    - no front door leaf
+
+site_levels:
+  collection: ARCH_Site
+  object: SITE_GROUND_SLOPED_001
+  material: MAT_SITE_GROUND
+  status: derived_not_surveyed
+  slope:
+    direction: falls from the front (south) toward the back (north)
+    grade: 1:27.8 (3.6 percent)
+    formula_z_m: -1.070 - (Y + 10.246) * 0.036
+    datum: bottom of the entry flight, Y = -10.246, Z = -1.070
+    levels_m:
+      foot_of_steps_Y_-10.246: -1.070
+      top_of_steps_Y_-8.806: -1.122
+      lounge_corner_Y_-3.688: -1.306
+      mid_house_Y_0: -1.439
+      kitchen_north_wall_Y_3.232: -1.555
+      rear_wall_Y_8.216: -1.735
+  derivation: >-
+    User: "the block slopes from the front of the house back." Grade chosen so the
+    rear deck at -0.340 clears the ground by ~1.4 m, matching the site plan's
+    "Cubby House Under Deck" note. Datum then dropped 0.170 when the bottom riser
+    was doubled, on the user's instruction to start the slope lower and show more
+    of the brown base course.
+  open_questions:
+    - actual surveyed fall front to back
+    - whether the block crests near the house rather than falling uniformly
+    - no lawn / driveway / garden-bed differentiation; one graded plane only
+
+exterior_brick_base_course:
+  collection: ARCH_Exterior_Brick_Base
+  status: provisional_from_exterior_photo
+  materials: [MAT_EXT_BRICK_DARK_BASE_XZ, MAT_EXT_BRICK_DARK_BASE_YZ]
+  band_top_z_m: 0.0
+  band_bottom_z_m: -2.300
+  construction: >-
+    Browner base-course brick with a LEVEL top at floor level, running down past the
+    lowest ground. Visible band height is therefore governed by the sloping site,
+    which is how it actually reads in Image/main.jpg - shallow at the front, deep
+    toward the rear.
+  visible_height_m:
+    at_entry_steps: 1.122
+    at_lounge_corner: 1.306
+    at_mid_house: 1.439
+    at_rear_wall: 1.735
+  objects:
+    walls: BRICK_BASE_WALL_GROUND_EXT_* (20, one per external veneer panel)
+    walkway_base: BRICK_BASE_WALKWAY_ENTRY_EAST_001
+  walkway_base_note: >-
+    Brick base wall under the raised entry walkway, matching the verandah base in
+    the reference photo. Resolves the previously floating slab.
+  dark_brick_tone_correction:
+    reason: >-
+      Same defect as the red brick - Color1 was near-black (sRGB 33,20,14) against a
+      dark red-brown Color2, giving a patchwork.
+    color1_srgb: [88, 58, 46]
+    color2_srgb: [110, 76, 60]
+    mortar_srgb: [126, 118, 106]
+    soiling_multiplier_range: [0.86, 1.06]
+  caveat: >-
+    An orthographic elevation render is edge-on to the ground plane and therefore
+    shows the buried part of the band. Judge band height from perspective views only.
+
+exterior_hardscape:
+  collection: ARCH_Exterior_Hardscape
+  status: provisional_from_user_description_and_exterior_photo
+  entry_walkway:
+    object: PAVING_GROUND_ENTRY_WALKWAY_001
+    material: MAT_EXT_CONCRETE_PAVING
+    top_z_m: -0.050
+    thickness_m: 0.100
+    outline_m:
+      - [2.290, -3.688]   # re-entrant corner, entry east face meets lounge south face
+      - [4.928, -3.688]   # the lounge corner - slab NE corner sits exactly on it
+      - [4.928, -8.806]
+      - [2.881, -8.806]   # end of the front bedroom (bed 4 south face)
+      - [2.881, -5.288]
+      - [2.290, -5.288]
+    width_at_entry_m: 2.638
+    width_at_bed4_m: 2.047
+    length_m: 5.118
+    derivation: >-
+      User: "outside the entry, there is a concrete walkway that lines up with the
+      lounge corner all the way to the end of the front bedroom." East edge set on
+      the lounge east wall face; north end on the lounge south wall face; south end
+      on bedroom 4's south wall face; west edge follows the stepped house footprint.
+    open_question: >-
+      2.638 m is wide for a walkway - the whole recess is filled. The alternative
+      reading is a narrower path with only its east edge on the lounge-corner line.
+  entry_steps:
+    objects: [STEP_GROUND_ENTRY_001, STEP_GROUND_ENTRY_002, STEP_GROUND_ENTRY_003]
+    material: MAT_EXT_CONCRETE_PAVING
+    riser_count: 5
+    riser_height_m: 0.170
+    bottom_riser_height_m: 0.340
+    bottom_riser_note: >-
+      Deliberately double the others, on the user's instruction. The site datum was
+      dropped 0.170 to suit, which is what exposes the extra brown base course.
+    going_m: 0.360
+    width_m: 2.047
+    horizontal_run_m: 1.440
+    two_R_plus_G_mm: 700
+    handrail_detail: >-
+      Rails follow the nosing line of the four equal risers and stop at the last
+      nosing (Z = -0.730); a taller newel then carries down to the ground at -1.070.
+      Over the doubled bottom riser the rail therefore sits ~1.22 m above the
+      ground rather than 0.900.
+    comfort_note: >-
+      Going deepened from 0.300 to 0.360 at the user's request for more foot room.
+      2R+G = 700 mm, at the upper end of the comfortable range, so the going should
+      not go deeper without dropping the riser height.
+    location: south end of the walkway, descending south from Y = -8.806
+    extent_y_m: [-10.246, -8.806]
+    total_fall_m: 0.850
+    implied_ground_z_m: -0.900
+    implied_ground_note: >-
+      The ground level at the foot of the flight is DERIVED from "5 steps" x a
+      standard 0.170 riser. It is not surveyed. If the real fall differs, the riser
+      count or height needs revisiting.
+    tread_faces: 4 intermediate treads plus the landing
+    width_history: >-
+      Briefly flared to 2.547 m on a misreading of "wider"; reverted. The flight is
+      the same width as the walkway.
+    material_note: >-
+      Modelled in concrete to continue the walkway. The exterior photo shows the
+      front steps as brick with timber nosings - confirm which applies here.
+  balustrade:
+    material: MAT_EXT_BALUSTRADE_BLACK
+    finish: satin black powdercoated steel
+    height_m: 0.900
+    members_m:
+      top_rail: round 0.042 dia
+      bottom_rail: square 0.024
+      balusters: square 0.016 at 0.120 centres
+      newel_posts: square 0.040 at max 1.75 m centres
+    runs:
+      - object: BALUSTRADE_ENTRY_STEP_E_001
+        type: raking stair rail, east cheek
+      - object: BALUSTRADE_ENTRY_STEP_W_001
+        type: raking stair rail, west cheek
+      - object: BALUSTRADE_ENTRY_EAST_001
+        type: level run along the walkway's open east edge
+        assumption: >-
+          Assumes the walkway's east side is also elevated above grade. If the
+          walkway sits at grade and only the south end drops away, delete this
+          object - it is deliberately separate for that reason.
+    simplification: >-
+      Plain picket balustrade. The reference photo has decorative scrollwork at the
+      stair newels which is not modelled.
+  not_yet_modelled:
+    - >-
+      Edge beam / brick base under the walkway. With the ground at -0.730 the
+      100 mm slab visibly floats 0.58 m clear. The exterior photo shows a brick
+      base wall under the front verandah.
+    - surrounding site levels, garden beds, driveway paving
+
+render_set_dressing:
+  collection: RENDER_Kitchen_Photoreal
+  purpose: >-
+    Lighting and context needed to render interiors. NOT surveyed building
+    geometry - exclude this collection for any documentation or measurement use.
+  contents:
+    surfaces: [SET_FLOOR_GROUND_TIMBER, SET_CEILING_GROUND, SET_CORNICE_*, SET_SKIRT_*]
+    lighting: [SET_LIGHT_WINDOW_W05, SET_LIGHT_FAMILY_DOORS, SET_LIGHT_KITCHEN_BATTEN]
+    fittings: [SET_FITTING_BATTEN_001, SET_OUTLET_*]
+    exterior_context: [SET_DECK_SLAB_001, SET_DECK_SOFFIT_001, SET_PIER_BRICK_*,
+                       SET_BALUSTRADE_RAIL_*, SET_BACKDROP_SKY_001]
+    cameras: [CAM_KITCHEN_HERO, CAM_KITCHEN_FAMILY, CAM_KITCHEN_CHECK]
+  exterior_context_status: >-
+    The covered deck beyond the family sliding doors is a rough stand-in built to
+    give the glazing something to read against - approximate depth, two piers, two
+    balustrade rails and an emissive backdrop. Dimensions are invented, not traced.
+  lights_not_camera_visible: true
+  render_script: KIT_PHOTOREAL_RENDER text datablock
+  render_recipe:
+    engine: CYCLES
+    device: CPU_only_on_this_machine
+    samples: 90
+    adaptive_threshold: 0.02
+    view_transform: AgX
+    look: AgX - Medium High Contrast
+    exposure: -0.70
+    approx_time_1200x900: 11.5_minutes
+
+shared_material_changes:
+  - material: MAT_SLIDING_DOOR_GLASS
+    owner_pass: doors
+    was: opaque_blue_tinted_alpha_0_28_placeholder
+    now: thin_wall_transmissive_glass_ior_1_52_roughness_0_02
+    reason: >-
+      The placeholder rendered as flat blue panels and dominates the kitchen /
+      family view. Revert if the doors pass wants the working look back.
+  - material: MAT_SLIDING_DOOR_FRAME
+    owner_pass: doors
+    was: near_black_metallic_0_55
+    now: white_powdercoat_aluminium_per_interior_photo
+    reason: Image/kitchen.jpg clearly shows white framed sliding doors.
+
+kitchen_joinery:
+  status: provisional_plan_trace_matched_to_interior_photo
+  source:
+    plan_image: Image/floorplan1.jpg
+    interior_photo: Image/kitchen.jpg
+    photo_view: from meals/lounge looking west-north-west into the kitchen
+  plan_to_world_mapping:
+    note: derived by fitting confirmed wall placements to the plan raster
+    world_x_m: (plan_px_x + 500) / 25.4 - 26.1817
+    world_y_m: 17.2244 - (plan_px_y + 170) / 25.4
+  collection_root: FIT_Kitchen
+  sub_collections:
+    - FIT_Kitchen_Benchtops
+    - FIT_Kitchen_Base
+    - FIT_Kitchen_Tall
+    - FIT_Kitchen_Overhead
+    - FIT_Kitchen_Appliances
+    - FIT_Kitchen_Sink
+    - FIT_Kitchen_Finishes
+    - FIT_Kitchen_Hardware
+    - FIT_Kitchen_Cutters
+  naming_pattern: KIT_<ELEMENT>_<ZONE>_<NNN>
+  object_origins: world_origin
+  origin_note: >-
+    Joinery meshes are built in place with object origins at (0,0,0) so that
+    Object texture coordinates equal world metres. Do not re-origin without
+    re-checking MAT_KIT_TIMBER_OAK and MAT_KIT_BENCHTOP_LAMINATE.
+  bounding_room_faces_m:
+    west_wall_x: -1.205        # WALL_GROUND_INT_KITCHEN_WEST_018 inner face
+    south_wall_y: 0.232        # WALL_GROUND_INT_KITCHEN_LOUNGE_022 north face
+    north_wall_y: 3.232        # WALL_GROUND_INT_FAMILY_KITCHEN_023 south face
+    north_wall_east_end_x: 2.783
+  datums_m:
+    floor_level_z: 0.0
+    bench_top_z: 0.900
+    benchtop_thickness: 0.038
+    benchtop_depth_total: 0.600
+    bullnose_width: 0.040
+    bullnose_bottom_z: 0.850
+    base_carcass_depth: 0.560
+    door_thickness: 0.018
+    door_reveal: 0.003
+    kickboard_height: 0.110
+    kickboard_proud_of_door: 0.012
+    overhead_bottom_z: 1.500
+    overhead_top_z: 2.300
+    overhead_depth_total: 0.336
+    tall_unit_top_z: 2.300
+    tall_unit_depth_total: 0.630
+    splashback_z_range: [0.900, 1.500]
+    splashback_tile_pitch: 0.152
+    decorative_course_z_range: [1.204, 1.356]
+  runs:
+    - id: KIT_RUN_WEST
+      type: base_with_overheads
+      extent_m: {x: [-1.205, -0.605], y: [1.245, 3.232]}
+      contents: [three_hinged_doors, cooktop, rangehood, five_overhead_doors]
+      confidence: provisional_plan_trace
+    - id: KIT_RUN_NORTH
+      type: base_sink_run
+      extent_m: {x: [-0.605, 1.820], y: [2.632, 3.232]}
+      contents: [blind_corner_pair, sink_cabinet_pair, integrated_dishwasher]
+      confidence: provisional_plan_trace
+    - id: KIT_RUN_PENINSULA
+      type: peninsula_bench
+      extent_m: {x: [1.820, 2.640], y: [1.821, 3.232]}
+      splay_corner_m: [[2.381, 1.821], [2.640, 2.080]]
+      benchtop_level: single_900mm
+      benchtop_level_note: >-
+        Photo was read as one continuous 900mm benchtop turning an inside corner,
+        not a raised breakfast bar. Confirm before finishing.
+      exposed_faces: flush_panels_with_one_vertical_reveal
+      confidence: provisional_plan_trace
+    - id: KIT_RUN_SOUTH_TALL
+      type: full_height_units
+      extent_m: {y: [0.232, 0.862]}
+      units:
+        - {id: PANTRY, x: [-1.205, -0.222], splayed_corner: true, north_face_y: 1.245}
+        - {id: OVEN_TOWER, x: [-0.222, 0.585]}
+        - {id: FRIDGE_RECESS, x: [0.585, 1.556], modelled_as: open_recess_no_appliance}
+        - {id: BROOM, x: [1.556, 1.855]}
+      confidence: provisional_plan_trace
+  fixtures:
+    sink:
+      type: inset_double_bowl_stainless
+      module_extent_m: {x: [0.240, 1.240], y: [2.712, 3.192]}
+      bowl_depth_m: 0.140
+      benchtop_aperture: live_boolean_modifier BOOL_SINK_APERTURE
+      tap: gooseneck_mixer at [0.740, 3.150]
+      confidence: provisional_position_from_plan_symbol_and_photo
+    cooktop:
+      extent_m: {x: [-1.145, -0.665], y: [1.750, 2.350]}
+      burners: 4
+    rangehood:
+      type: slimline_under_cupboard
+      extent_m: {x: [-1.205, -0.735], y: [1.680, 2.430], z: [1.500, 1.650]}
+    servery_sill:
+      opening_id: P02
+      timber_sill_z: [1.000, 1.018]
+  materials:
+    benchtop: MAT_KIT_BENCHTOP_LAMINATE
+    doors_and_panels: MAT_KIT_DOOR_IVORY
+    carcass: MAT_KIT_CARCASS_WHITE
+    bullnose_kick_trim: MAT_KIT_TIMBER_OAK
+    splashback_field: MAT_KIT_TILE_FIELD
+    splashback_border: MAT_KIT_TILE_BORDER
+    sink: MAT_KIT_SINK_STEEL
+    tapware: MAT_KIT_TAP_CHROME
+    rangehood: MAT_KIT_RANGEHOOD_DARK
+    cooktop: MAT_KIT_COOKTOP_BLACK
+    handles: MAT_KIT_HANDLE_SATIN
+    appliance: [MAT_KIT_APPLIANCE_STEEL, MAT_KIT_APPLIANCE_GLASS]
+  texturing_readiness:
+    all_meshes_uv_unwrapped: true
+    splashback_uv: planar_world_metres_v_zero_at_bench_height
+    other_uv: smart_project
+    current_shading: procedural_placeholders_on_principled_bsdf
+    next_step: >-
+      Swap procedural base colour / roughness / normal inputs for scanned PBR maps
+      (cream laminate, honey-oak timber, 150mm gloss wall tile) and switch the
+      scene to Cycles with real lighting for the photoreal pass.
+
+unresolved_inputs:
+  - jurisdiction
+  - confirmed_plan_scale
+  - confirmed_external_wall_assembly
+  - confirmed_internal_wall_assembly
+  - confirmed_wall_height
+  - confirmed_window_schedule
+  - confirmed_window_sill_and_head_heights
+  - confirmed_door_schedule
+  - confirmed_door_head_heights
+  - confirmed_door_handing_and_leaf_types
+  - confirmed_kitchen_lounge_opening_width_and_head
+  - confirmed_family_room_floor_drop
+  - confirmed_family_room_riser_and_tread_dimensions
+  - confirmed_kitchen_family_view_opening_sill_and_head
+  - confirmed_family_sliding_door_frame_profile_and_panel_stacking
+  - confirmed_brick_manufacturer_product_and_exact_colour
+  - confirmed_exterior_plinth_height_and_site_levels
+  - confirmed_kitchen_bench_height_and_cabinet_depths
+  - confirmed_peninsula_single_level_vs_raised_breakfast_bar
+  - confirmed_sink_bowl_configuration_and_exact_position
+  - confirmed_cooktop_and_rangehood_makes_and_sizes
+  - confirmed_splashback_tile_size_and_decorative_tile_layout
+  - confirmed_cabinet_door_and_drawer_split_within_each_run
+  - kitchen_pbr_texture_maps_for_laminate_timber_and_tile
+  - confirmed_interior_wall_and_ceiling_paint_colours
+  - confirmed_wet_area_wall_tiling_extents
+  - skirting_and_architrave_profiles_and_extents
+  - confirmed_family_room_carpet_colour_and_pile_type
+  - confirmed_ceiling_fan_count_positions_and_model
+  - confirmed_covered_deck_geometry_piers_and_balustrade
+  - confirmed_sliding_door_frame_colour_and_glazing_spec
+  - confirmed_entry_walkway_width_narrow_path_vs_full_paved_recess
+  - confirmed_ground_level_at_foot_of_entry_steps
+  - confirmed_entry_step_width_and_tread_material
+  - confirmed_whether_walkway_east_edge_is_elevated_or_at_grade
+  - confirmed_walkway_edge_beam_or_brick_base_construction

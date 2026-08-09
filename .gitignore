@@ -1,0 +1,17 @@
+# Blender autosaves and iterative safety copies
+*.blend1
+*.blend2
+*_pre_*.blend
+*_backup_*.blend
+balmoral_court*.blend
+
+# Generated verification and comparison renders
+/architect_*.png
+/entry_*.png
+
+# Local/editor noise
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db
+

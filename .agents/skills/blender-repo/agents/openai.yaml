@@ -1,0 +1,7 @@
+interface:
+  display_name: "Blender House Architect"
+  short_description: "Build floor-plan houses through Blender MCP"
+  default_prompt: "Use $blender-repo to build or refine this floor-plan-based Blender house."
+
+policy:
+  allow_implicit_invocation: true
