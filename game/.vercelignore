@@ -1,0 +1,9 @@
+# The libraries the game actually uses are vendored into vendor/; the install
+# tree is only needed to re-vendor them.
+node_modules
+
+# Authoring-time only: the Blender bake that produces assets/balmoral.glb.
+bake
+
+# Local dev server. Vercel serves the static files itself.
+serve.mjs

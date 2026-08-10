@@ -47,9 +47,9 @@ export class Level {
 
     const [gltf, data] = await Promise.all([
       new Promise((res, rej) =>
-        loader.load('./public/balmoral.glb', res,
+        loader.load('./assets/balmoral.glb', res,
           e => onProgress?.(e.total ? e.loaded / e.total : 0), rej)),
-      fetch('./public/level.json').then(r => r.json()),
+      fetch('./assets/level.json').then(r => r.json()),
     ]);
     mark('gltf_fetch_parse');
 

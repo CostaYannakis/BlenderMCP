@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import materials  # noqa: E402  (needs the path above)
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-OUT_DIR = os.path.join(REPO, "game", "public")
+OUT_DIR = os.path.join(REPO, "game", "assets")
 GLB_PATH = os.path.join(OUT_DIR, "balmoral.glb")
 LEVEL_PATH = os.path.join(OUT_DIR, "level.json")
 
