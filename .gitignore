@@ -9,6 +9,10 @@ balmoral_court*.blend
 /architect_*.png
 /entry_*.png
 
+# The game vendors the library builds it needs into game/vendor, so the
+# install tree is only required when re-vendoring.
+game/node_modules/
+
 # Local/editor noise
 __pycache__/
 *.py[cod]

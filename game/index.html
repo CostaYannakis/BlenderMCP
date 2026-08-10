@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BALMORAL — 3:33</title>
+<style>
+  :root {
+    --ink: #c8ccd4;
+    --dim: #6a707d;
+    --warm: #e8b784;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: #000; color: var(--ink);
+    font-family: "Courier New", ui-monospace, monospace;
+    cursor: default;
+  }
+  canvas { display: block; }
+
+  /* ---------- overlays ---------- */
+  .layer {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    z-index: 10;
+    transition: opacity .8s ease;
+  }
+  .hidden { opacity: 0; pointer-events: none; }
+
+  #loading { background: #000; gap: 1.5rem; }
+  #loading .bar {
+    width: min(320px, 60vw); height: 1px; background: #1c1f26; position: relative;
+  }
+  #loading .bar i {
+    position: absolute; inset: 0 auto 0 0; width: 0%; background: var(--warm);
+    transition: width .25s ease;
+  }
+  #loading .msg { font-size: .7rem; letter-spacing: .35em; color: var(--dim); text-transform: uppercase; }
+
+  #title { background: radial-gradient(ellipse at center, #08090c 0%, #000 70%); gap: 2rem; }
+  #title h1 {
+    margin: 0; font-size: clamp(2.5rem, 9vw, 6rem); font-weight: 400;
+    letter-spacing: .5em; text-indent: .5em;
+    color: #e6e2da;
+    text-shadow: 0 0 40px rgba(232,183,132,.25);
+  }
+  #title .sub { font-size: .75rem; letter-spacing: .4em; color: var(--dim); text-transform: uppercase; }
+  #title .keys {
+    font-size: .7rem; line-height: 2.2; color: #4c5260; letter-spacing: .18em;
+    text-align: center; margin-top: 1rem;
+  }
+  #title .keys b { color: #8d94a3; font-weight: 400; }
+  .enter {
+    margin-top: 1rem; padding: .9rem 2.4rem; border: 1px solid #2b303a;
+    font-size: .7rem; letter-spacing: .35em; text-transform: uppercase;
+    color: var(--warm); cursor: pointer; background: transparent;
+    font-family: inherit; transition: all .3s ease;
+  }
+  .enter:hover { background: rgba(232,183,132,.06); border-color: #4a4034; }
+  .enter.ghost { color: #6a707d; }
+  .enter.ghost:hover { color: #9aa1b0; background: rgba(120,127,141,.05); }
+  .choices { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  #title .warn { font-size: .6rem; letter-spacing: .2em; color: #3a3f4a; margin-top: .5rem; }
+
+  /* ---------- hud ---------- */
+  #hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
+
+  #crosshair {
+    position: absolute; left: 50%; top: 50%; width: 3px; height: 3px;
+    margin: -1.5px 0 0 -1.5px; border-radius: 50%;
+    background: rgba(200,204,212,.35);
+    transition: all .4s ease;
+  }
+  #crosshair.active { background: var(--warm); box-shadow: 0 0 8px var(--warm); transform: scale(2.2); }
+
+  #room {
+    position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%);
+    font-size: .7rem; letter-spacing: .45em; text-transform: uppercase;
+    color: rgba(200,204,212,.5); opacity: 0; transition: opacity 1.2s ease;
+    white-space: nowrap; text-shadow: 0 0 20px #000;
+  }
+  #room.show { opacity: 1; }
+  #room.wrong { color: rgba(232,120,120,.75); }
+
+  #prompt {
+    position: absolute; left: 50%; top: 56%; transform: translateX(-50%);
+    font-size: .68rem; letter-spacing: .3em; text-transform: uppercase;
+    color: rgba(232,183,132,.85); opacity: 0; transition: opacity .3s ease;
+    white-space: nowrap; text-shadow: 0 0 16px #000;
+  }
+  #prompt.show { opacity: 1; }
+
+  #whisper {
+    position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%);
+    font-size: .78rem; letter-spacing: .12em; color: rgba(210,214,222,.82);
+    opacity: 0; transition: opacity 1.4s ease; max-width: 70vw; text-align: center;
+    text-shadow: 0 0 18px #000, 0 0 4px #000; font-style: italic;
+  }
+  #whisper.show { opacity: 1; }
+
+  #meta {
+    position: absolute; left: 1.6rem; top: 1.4rem;
+    font-size: .62rem; letter-spacing: .28em; color: rgba(120,127,141,.55);
+    line-height: 2; text-transform: uppercase;
+  }
+  #meta .n { color: rgba(232,183,132,.8); }
+
+  #stats {
+    position: absolute; right: 1.6rem; top: 1.4rem;
+    font-size: .58rem; letter-spacing: .18em; color: rgba(90,96,108,.5);
+    text-align: right; line-height: 1.9;
+  }
+
+  /* full-screen colour flashes for surreal beats */
+  #flash {
+    position: fixed; inset: 0; z-index: 6; pointer-events: none;
+    background: #fff; opacity: 0; mix-blend-mode: screen;
+  }
+
+  #pause { background: rgba(0,0,0,.86); gap: 1.2rem; }
+  #pause h2 { margin: 0; font-size: 1rem; letter-spacing: .5em; font-weight: 400; color: #9aa1b0; }
+  #pause .hint { font-size: .65rem; letter-spacing: .3em; color: #4c5260; }
+
+  #ending { background: #000; gap: 1.8rem; }
+  #ending h2 {
+    margin: 0; font-size: clamp(1.2rem,4vw,2rem); font-weight: 400;
+    letter-spacing: .45em; color: #d8d4cc;
+  }
+  #ending p { font-size: .7rem; letter-spacing: .25em; color: var(--dim); max-width: 34ch; text-align: center; line-height: 2.4; }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div id="crosshair"></div>
+  <div id="meta"></div>
+  <div id="stats"></div>
+  <div id="prompt"></div>
+  <div id="room"></div>
+  <div id="whisper"></div>
+</div>
+
+<div id="flash"></div>
+
+<div class="layer" id="loading">
+  <div class="msg" id="loadMsg">opening the house</div>
+  <div class="bar"><i id="loadBar"></i></div>
+</div>
+
+<div class="layer hidden" id="title">
+  <h1>BALMORAL</h1>
+  <div class="sub">a house that does not end</div>
+  <div class="keys">
+    <b>W A S D</b> move &nbsp;·&nbsp; <b>MOUSE</b> look &nbsp;·&nbsp; <b>SHIFT</b> run &nbsp;·&nbsp; <b>C</b> crouch<br>
+    <b>F</b> torch &nbsp;·&nbsp; <b>M</b> switch mode &nbsp;·&nbsp; <b>E</b> take a light &nbsp;·&nbsp; <b>ESC</b> stop
+  </div>
+  <div class="choices">
+    <button class="enter" id="enterWalkBtn">walk through</button>
+    <button class="enter ghost" id="enterNightBtn">after dark</button>
+  </div>
+  <div class="warn">daylight walkthrough, or the version that is not · headphones recommended</div>
+</div>
+
+<div class="layer hidden" id="pause">
+  <h2>STILL</h2>
+  <div class="hint">click to continue</div>
+</div>
+
+<div class="layer hidden" id="ending">
+  <h2 id="endTitle"></h2>
+  <p id="endText"></p>
+  <button class="enter" id="againBtn">again</button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/",
+    "three-mesh-bvh": "./vendor/three-mesh-bvh.module.js"
+  }
+}
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

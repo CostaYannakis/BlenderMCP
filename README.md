@@ -10,6 +10,7 @@ Blender project for reconstructing the Balmoral house from a floor plan and exte
 - `.agents/skills/blender-repo/` — Blender architecture workflow skill
 - `Image/` — source floor plan and visual references
 - `assets/` — textures and HDRIs used by the scene
+- `game/` — a playable first-person walkthrough baked from the scene (`cd game && npm start`); see `game/README.md`
 
 ## Opening the project
 
