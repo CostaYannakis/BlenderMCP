@@ -54,6 +54,13 @@ export class Player {
     this.gravity = -18;
     this.lookSensitivity = 0.0021;
 
+    // Look input accumulated between frames.
+    this._pendingYaw = 0;
+    this._pendingPitch = 0;
+    // Seconds for a flick to be ~63% applied. Small enough to feel direct,
+    // large enough to smooth out uneven event batching.
+    this.lookResponse = 0.018;
+
     this.keys = Object.create(null);
     this.enabled = false;
     this.onFootstep = null;
@@ -70,12 +77,26 @@ export class Player {
     };
     this._onKeyUp = e => { this.keys[e.code] = false; };
 
+    // Pointer lock occasionally reports a single enormous movement delta — on
+    // the frame lock is acquired, and intermittently when the OS applies
+    // pointer acceleration. Unclamped, one of those snaps the view round.
+    //
+    // The cap has to sit well above real input or it throttles fast turns,
+    // which feels just as wrong. A hard flick is a couple of hundred pixels in
+    // one event at a low polling rate; the spikes are in the thousands. 500 px
+    // is about 60 degrees in a single event — comfortably past anything a hand
+    // produces, comfortably under a glitch.
+    const MAX_EVENT_DELTA = 500;
+    const clampDelta = v => Math.max(-MAX_EVENT_DELTA, Math.min(MAX_EVENT_DELTA, v || 0));
+
     this._onMouseMove = e => {
       if (!this.enabled) return;
-      this.yaw -= e.movementX * this.lookSensitivity * this.lookFlip;
-      this.pitch -= e.movementY * this.lookSensitivity;
-      const limit = Math.PI / 2 - 0.02;
-      this.pitch = Math.max(-limit, Math.min(limit, this.pitch));
+      // Accumulated here, applied once per frame in update(). Mouse events
+      // arrive in irregular bursts that do not line up with frames, so
+      // integrating them straight into the camera makes the rate of turn
+      // jitter with the event timing rather than the hand movement.
+      this._pendingYaw -= clampDelta(e.movementX) * this.lookSensitivity * this.lookFlip;
+      this._pendingPitch -= clampDelta(e.movementY) * this.lookSensitivity;
     };
 
     this.lookFlip = 1;   // surreal events invert this briefly
@@ -93,10 +114,17 @@ export class Player {
    * is an enclosed house with a roof, and a ray cast from well overhead finds
    * the roof first and buries the capsule in solid geometry.
    */
+  /** Drop any look input still in flight, so it cannot be applied later. */
+  clearLook() {
+    this._pendingYaw = 0;
+    this._pendingPitch = 0;
+  }
+
   placeAt(worldPos, yaw = 0) {
     this.yaw = yaw;
     this.pitch = 0;
     this.velocity.set(0, 0, 0);
+    this.clearLook();
 
     _ray.set(new THREE.Vector3(worldPos.x, worldPos.y + 0.8, worldPos.z), _down);
     _ray.far = 6;
@@ -114,8 +142,33 @@ export class Player {
     return target.set(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
   }
 
+  /**
+   * Drain the accumulated look input into the camera angles.
+   *
+   * Exponential rather than all-at-once, and framed in seconds so the feel does
+   * not change with frame rate. The residue left each frame is tiny, so this
+   * reads as smoothing rather than lag.
+   */
+  _applyLook(dt) {
+    const k = 1 - Math.exp(-dt / this.lookResponse);
+
+    const dy = this._pendingYaw * k;
+    const dp = this._pendingPitch * k;
+    this._pendingYaw -= dy;
+    this._pendingPitch -= dp;
+
+    this.yaw += dy;
+    this.pitch += dp;
+
+    const limit = Math.PI / 2 - 0.02;
+    if (this.pitch > limit) { this.pitch = limit; this._pendingPitch = 0; }
+    if (this.pitch < -limit) { this.pitch = -limit; this._pendingPitch = 0; }
+  }
+
   update(dt) {
     if (!this.enabled) return;
+
+    this._applyLook(dt);
 
     const wantCrouch = !!(this.keys.KeyC || this.keys.ControlLeft);
     this.crouching = wantCrouch;
@@ -157,9 +210,15 @@ export class Player {
     // Head bob and lean, driven by ground distance so it stays in step with speed.
     if (moving && this.onGround) {
       this.stepDistance += move.length();
-      const targetBob = this.crouching ? 0.012 : this.running ? 0.055 : 0.028;
+      // Deliberately subtle. Bob is driven by distance travelled, so raising
+      // the walk and run speeds scaled both its size and its rate — which is
+      // what turned it into a twitch.
+      const targetBob = this.crouching ? 0.006 : this.running ? 0.016 : 0.011;
       this.bobAmount += (targetBob - this.bobAmount) * Math.min(1, dt * 6);
-      this.bobPhase += (move.length() / (this.crouching ? 0.42 : 0.72)) * Math.PI;
+
+      // Capped so a sprint cannot oscillate the head faster than a stride.
+      const stridePhase = (move.length() / (this.crouching ? 0.62 : 1.05)) * Math.PI;
+      this.bobPhase += Math.min(stridePhase, dt * 9);
 
       const stride = this.crouching ? 0.78 : this.running ? 1.35 : 0.95;
       if (this.stepDistance - this.lastStepDistance > stride) {
@@ -170,7 +229,7 @@ export class Player {
       this.bobAmount += (0 - this.bobAmount) * Math.min(1, dt * 4);
     }
 
-    const targetRoll = -ix * (this.running ? 0.028 : 0.016);
+    const targetRoll = -ix * (this.running ? 0.012 : 0.007);
     this.roll += (targetRoll - this.roll) * Math.min(1, dt * 5);
 
     this.breath += dt * (this.running ? 2.4 : 0.9);
@@ -238,8 +297,7 @@ export class Player {
 
   updateCamera() {
     const bob = Math.sin(this.bobPhase) * this.bobAmount;
-    const sway = Math.cos(this.bobPhase * 0.5) * this.bobAmount * 0.6;
-    const breathe = Math.sin(this.breath) * 0.006;
+    const breathe = Math.sin(this.breath) * 0.004;
 
     this.camera.position.set(
       this.position.x,
@@ -250,7 +308,10 @@ export class Player {
     this.camera.rotation.order = 'YXZ';
     this.camera.rotation.y = this.yaw;
     this.camera.rotation.x = this.pitch;
-    this.camera.rotation.z = this.roll + sway * 0.35;
+    // Roll comes only from strafing now. Rolling the horizon in time with the
+    // walk cycle as well was the most disorienting part of the old feel — the
+    // whole world tilted rhythmically while you were trying to aim.
+    this.camera.rotation.z = this.roll;
   }
 
   dispose() {

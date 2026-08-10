@@ -330,6 +330,7 @@ document.addEventListener('pointerlockchange', () => {
     ui.hide(ui.pause);
     sound.resume();
     clock.getDelta();          // drop the paused interval
+    player?.clearLook();       // and any movement reported while unlocking
   } else if (started && !surreal?.finished) {
     ui.show(ui.pause);
   }
