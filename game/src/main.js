@@ -2,16 +2,16 @@ import * as THREE from 'three';
 import { Level, fromBlender } from './level.js';
 import { Player } from './player.js';
 import { Sound } from './audio.js';
-import { Surreal } from './surreal.js';
 import { buildComposer } from './post.js';
-import { MODES, applyMode } from './modes.js';
+import { WALKTHROUGH, applyMode } from './modes.js';
+import { Net } from './net.js';
+import { AVATARS, RemotePlayer } from './avatars.js';
+import { PARTY_HOST, ROOM, MAX_PLAYERS } from './config.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 // Inside the entry, a step clear of the front door (D10) so the capsule is not
-// clipping the jambs, angled at the longest interior sightline — a doorway
-// opening onto nothing. Spawning indoors also keeps the drop onto the floor
-// unambiguous: the site slopes away outside and the porch sits a metre above
-// the front path.
+// clipping the jambs, angled at the longest interior sightline. Spawning indoors
+// keeps the drop onto the floor unambiguous.
 const SPAWN_BLENDER = [1.5, -4.0, 0.15];
 const SPAWN_YAW = 2.09;
 
@@ -21,11 +21,9 @@ const $ = id => document.getElementById(id);
 
 const ui = {
   loading: $('loading'), loadBar: $('loadBar'), loadMsg: $('loadMsg'),
-  title: $('title'), pause: $('pause'), ending: $('ending'),
-  crosshair: $('crosshair'), meta: $('meta'), stats: $('stats'),
-  // Element handles are suffixed because `room`, `whisper` and `flash` are
-  // also method names on this object.
-  roomEl: $('room'), promptEl: $('prompt'), whisperEl: $('whisper'), flashEl: $('flash'),
+  title: $('title'), pause: $('pause'),
+  meta: $('meta'), stats: $('stats'),
+  roomEl: $('room'), noticeEl: $('notice'), presence: $('presence'),
 
   show(el) { el.classList.remove('hidden'); },
   hide(el) { el.classList.add('hidden'); },
@@ -35,53 +33,38 @@ const ui = {
     if (msg) this.loadMsg.textContent = msg;
   },
 
-  flash(strength = 0.6, ms = 120) {
-    this.flashEl.style.transition = 'none';
-    this.flashEl.style.opacity = String(strength);
-    requestAnimationFrame(() => {
-      this.flashEl.style.transition = `opacity ${ms}ms ease-out`;
-      this.flashEl.style.opacity = '0';
-    });
-  },
-
-  room(label, wrong = false) {
+  room(label) {
     if (!label) { this.roomEl.classList.remove('show'); return; }
+    if (this._last === label) return;
+    this._last = label;
     this.roomEl.textContent = label;
-    this.roomEl.classList.toggle('wrong', wrong);
     this.roomEl.classList.add('show');
     clearTimeout(this._roomT);
-    this._roomT = setTimeout(() => this.roomEl.classList.remove('show'), 3400);
+    this._roomT = setTimeout(() => this.roomEl.classList.remove('show'), 3000);
   },
 
-  whisper(text) {
-    this.whisperEl.textContent = text;
-    this.whisperEl.classList.add('show');
-    clearTimeout(this._whT);
-    this._whT = setTimeout(() => this.whisperEl.classList.remove('show'), 5200);
-  },
-
-  setPrompt(text) {
-    if (text) {
-      this.promptEl.textContent = text;
-      this.promptEl.classList.add('show');
-    } else {
-      this.promptEl.classList.remove('show');
-    }
-  },
-
-  end(title, text) {
-    $('endTitle').textContent = title;
-    $('endText').textContent = text;
-    this.show(this.ending);
+  notice(text) {
+    this.noticeEl.textContent = text;
+    this.noticeEl.classList.add('show');
+    clearTimeout(this._noticeT);
+    this._noticeT = setTimeout(() => this.noticeEl.classList.remove('show'), 1600);
   },
 };
+
 // ------------------------------------------------------------------ engine
 
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
   powerPreference: 'high-performance',
 });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+// 1.75 was too generous. On a 150%-scaled Windows display that renders 2.25x
+// the pixels of the canvas, and every one of them goes through the full-screen
+// grade pass as well. This is a walkthrough, not a shooter — 1.25 is plenty,
+// and the adaptive scaler below drops it further if the frame rate asks.
+const MAX_DPR = 1.25;
+const MIN_DPR = 0.75;
+let curDpr = Math.min(devicePixelRatio, MAX_DPR);
+renderer.setPixelRatio(curDpr);
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -91,16 +74,16 @@ renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x03040a);
-const fog = new THREE.FogExp2(0x05070d, 0.085);
+scene.background = new THREE.Color(WALKTHROUGH.background);
+const fog = new THREE.FogExp2(WALKTHROUGH.background, WALKTHROUGH.fog);
 scene.fog = fog;
 
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.05, 120);
 scene.add(camera);
 
-// Image-based lighting. Without it every metal in the house — the chrome tap,
-// the steel appliances, the bathroom mirror — renders black, because metals
-// have no diffuse term and nothing to reflect. Its strength is set per mode.
+// Image-based lighting. Without it every metal in the house — the chrome rail,
+// the steel appliances — renders black, because metals have no diffuse term and
+// nothing to reflect.
 {
   const pmrem = new THREE.PMREMGenerator(renderer);
   pmrem.compileEquirectangularShader();
@@ -108,20 +91,19 @@ scene.add(camera);
   pmrem.dispose();
 }
 
-const ambient = new THREE.AmbientLight(0xf0f2f5, 0.10);
+const ambient = new THREE.AmbientLight(0xf0f2f5, WALKTHROUGH.ambient);
 scene.add(ambient);
 
-// The workhorse of the daylight mode. A hemisphere light is not occluded by the
-// roof, which is exactly what makes enclosed interiors readable without lighting
-// every room individually.
-// Kept close to neutral on purpose: a saturated sky colour at this strength
-// tints white plaster to solid blue and reads as a hole in the wall.
-const hemi = new THREE.HemisphereLight(0xdce6f0, 0x9a8f80, 0.32);
+// A hemisphere light is not occluded by the roof, which is what makes enclosed
+// interiors readable without lighting every room individually. Kept close to
+// neutral: a saturated sky colour at this strength tints white plaster solid
+// blue and reads as a hole in the wall.
+const hemi = new THREE.HemisphereLight(0xdce6f0, 0x9a8f80, WALKTHROUGH.hemisphere);
 scene.add(hemi);
 
-// Sun: the only shadow-caster that shapes the exterior and throws window light
+// Sun: the only shadow-caster, shaping the exterior and throwing window light
 // across the floors.
-const sun = new THREE.DirectionalLight(0xfff2e0, 1.5);
+const sun = new THREE.DirectionalLight(0xfff2e0, WALKTHROUGH.sun);
 sun.position.set(-16, 22, 14);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
@@ -135,102 +117,75 @@ sun.shadow.normalBias = 0.04;
 }
 scene.add(sun);
 
-// Moonlight, cold and directional, for the night mode only.
-const moon = new THREE.DirectionalLight(0x8fb0e8, 0.0);
-moon.position.set(-14, 18, -10);
-moon.visible = false;
-scene.add(moon);
-
-// Torch. Deliberately shadowless: eleven shadow-casting practicals already
-// carry the occlusion, and a twelfth dynamic cube pass would halve the frame
-// rate for light that only ever falls on what you are looking at.
-// Near-linear falloff (decay 1) rather than physical inverse-square. A torch
-// needs a usable 1-10 m range; with decay 2 it either blows the near wall to
-// white or dies before it reaches the far side of a room.
-const torch = new THREE.SpotLight(0xffe2bc, 0, 22, 0.55, 0.85, 1.0);
-torch.position.set(0, 0, 0.1);
-torch.target.position.set(0, 0, -1);
-camera.add(torch, torch.target);
-
 const { composer, bloom, liminal } = buildComposer(renderer, scene, camera);
+
+// The composer renders several passes per frame and each render() resets the
+// counters, so the default autoReset reports only the last full-screen quad.
+// Reset once per frame instead, and the totals are the real per-frame cost.
+renderer.info.autoReset = false;
 
 // ------------------------------------------------------------------- state
 
 const sound = new Sound();
-let level, player, surreal;
+let level, player;
 let running = false, started = false;
-let torchOn = false, torchLevel = 0;
-let mode = 'walkthrough';
 const clock = new THREE.Clock();
 
-function setMode(key) {
-  mode = key;
-  const m = applyMode(key, {
-    scene, fog, ambient, hemi, sun, moon, level, bloom, liminal, surreal,
-  });
-  torchOn = key === 'night';
-  document.body.dataset.mode = key;
-  ui.whisper(`${m.label} — ${m.hint}`);
-  return m;
-}
+// ---------------------------------------------------------------- multiplayer
+const net = new Net(PARTY_HOST, ROOM);
+const remotes = new Map();                 // id -> RemotePlayer
+const avatarRoot = new THREE.Group();
+avatarRoot.name = 'AVATARS';
+scene.add(avatarRoot);
 
-// ------------------------------------------------------------------ shadows
+net.onJoin = p => {
+  if (remotes.has(p.id)) return;
+  const r = new RemotePlayer(p);
+  if (p.pose) r.setPose(p.pose);
+  remotes.set(p.id, r);
+  avatarRoot.add(r.group);
+  ui.notice(`${p.name} arrived`);
+};
+net.onLeave = id => {
+  const r = remotes.get(id);
+  if (!r) return;
+  r.dispose();
+  remotes.delete(id);
+};
+net.onPose = (id, pose) => remotes.get(id)?.setPose(pose);
+net.onStatus = text => { ui.presence.textContent = text; };
 
 /**
- * Each shadow-casting point light costs one fragment texture unit, and WebGL
- * only guarantees 16 of them — eleven at once fails to link against a material
- * that also carries colour, normal and roughness maps.
- *
- * The house is static, so shadow maps only ever need rendering once. Bake them
- * a few lights at a time to stay under the limit, freeze the shadow system,
- * then keep only the nearest handful of lamps visible at runtime. The baked
- * maps survive a light being hidden and reused later.
- */
-/**
- * The sun is the only shadow caster, and the house never moves, so its map is
+ * The sun is the only shadow caster and the house never moves, so its map is
  * rendered once and then the whole shadow system is frozen.
  */
 function bakeSunShadow() {
-  const wasVisible = sun.visible;
-  sun.visible = true;
   renderer.shadowMap.needsUpdate = true;
   renderer.render(scene, camera);
-  sun.visible = wasVisible;
   renderer.shadowMap.autoUpdate = false;
 }
 
 /**
- * Compile every material up front.
- *
- * Three compiles a shader the first time a material is actually drawn, so
- * walking into a room you have not seen yet costs a compile stall mid-stride.
- * Paying for all of them behind the loading screen keeps the walk smooth.
+ * Compile every material up front. Three compiles a shader the first time a
+ * material is actually drawn, so walking into a room you have not seen yet
+ * costs a compile stall mid-stride.
  */
 async function precompile() {
-  if (renderer.compileAsync) {
-    await renderer.compileAsync(scene, camera);
-  } else {
-    renderer.compile(scene, camera);
-  }
+  if (renderer.compileAsync) await renderer.compileAsync(scene, camera);
+  else renderer.compile(scene, camera);
 }
 
 // -------------------------------------------------------------------- boot
 
 async function boot() {
-  const t0 = performance.now();
-  const marks = {};
-  const mark = name => { marks[name] = Math.round(performance.now() - t0); };
-
   ui.progress(0.02, 'opening the house');
 
   level = new Level();
-  await level.load(t => ui.progress(0.02 + t * 0.75, 'walking the rooms'), mark);
-  mark('total_load');
+  await level.load(t => ui.progress(0.02 + t * 0.75, 'walking the rooms'), () => {});
 
   scene.add(level.root);
   // The collider stays out of the scene graph deliberately: its geometry is
-  // already in world space, so an identity matrix is correct, and keeping it
-  // unparented means it costs nothing at render time while still raycasting.
+  // already in world space, so an identity matrix is correct.
 
   ui.progress(0.85, 'setting the lights');
 
@@ -238,53 +193,31 @@ async function boot() {
   player.placeAt(fromBlender(SPAWN_BLENDER), SPAWN_YAW);
   player.onFootstep = i => sound.footstep(i);
 
-  surreal = new Surreal({
-    level, player, sound, scene, fog, liminal, moon, ambient, ui,
-  });
+  applyMode({ scene, fog, ambient, hemi, sun, level, bloom, liminal });
+  document.body.dataset.mode = 'walkthrough';
 
-  setMode('walkthrough');
-
-  // Compile before the shadow bake, not after: whichever runs first pays for
-  // every shader and texture upload in the scene, and compileAsync can do that
-  // work off the critical path where the driver supports it.
-  // Compile both modes now. Each has a different light set and therefore a
-  // different shader permutation, so compiling only the starting mode leaves a
-  // visible freeze the first time someone presses M.
-  ui.progress(0.88, 'compiling shaders');
+  ui.progress(0.9, 'compiling shaders');
   await precompile();
-  setMode('night');
-  await precompile();
-  setMode('walkthrough');
-  mark('precompile');
-
   bakeSunShadow();
-  mark('sun_shadow');
 
-  window.__bootMarks = marks;
-  console.log('[boot] ms:', JSON.stringify(marks));
-
-  // Handle for debugging from the console: positions, teleports, dread.
-  window.__balmoral = {
-    THREE, renderer, scene, camera, level, player, surreal, sound, ui,
-    liminal, torch, sun, moon, hemi, ambient, bloom, composer, setMode, MODES,
-  };
+  // Handle for debugging from the console.
+  window.__balmoral = { THREE, renderer, scene, camera, level, player, sound, ui };
 
   ui.progress(1, 'ready');
   ui.stats.textContent =
-    `${level.triangleCount.toLocaleString()} tris · ${level.lamps.length} lamps · ${level.rooms.length} rooms`;
+    `${level.triangleCount.toLocaleString()} tris · ${level.rooms.length} rooms`;
 
   setTimeout(() => {
     ui.hide(ui.loading);
     ui.show(ui.title);
-  }, 500);
+  }, 400);
 }
 
 // ------------------------------------------------------------------ session
 
 /**
  * Pointer lock can be refused — most often by the browser's short cooldown
- * after Esc. Fall back to the pause card so there is always a way back in
- * rather than a dead title-less screen.
+ * after Esc. Fall back to the pause card so there is always a way back in.
  */
 function grabPointer() {
   const res = renderer.domElement.requestPointerLock();
@@ -293,22 +226,46 @@ function grabPointer() {
   }
 }
 
-function enter(which) {
+// --- no-login identity: a name and a colour, remembered locally -------------
+let chosenAvatar = Number(localStorage.getItem('balmoral.avatar') || 0);
+
+const swatchRow = $('swatches');
+AVATARS.forEach((a, i) => {
+  const b = document.createElement('button');
+  b.className = 'swatch';
+  b.style.background = '#' + a.color.toString(16).padStart(6, '0');
+  b.title = a.label;
+  b.setAttribute('aria-label', a.label);
+  b.addEventListener('click', () => {
+    chosenAvatar = i;
+    localStorage.setItem('balmoral.avatar', String(i));
+    [...swatchRow.children].forEach((c, j) => c.classList.toggle('on', j === i));
+  });
+  swatchRow.appendChild(b);
+});
+[...swatchRow.children].forEach((c, j) => c.classList.toggle('on', j === chosenAvatar));
+
+const nameInput = $('nameInput');
+nameInput.value = localStorage.getItem('balmoral.name') || '';
+
+function enter() {
+  const name = (nameInput.value || '').trim().slice(0, 18) || 'guest';
+  localStorage.setItem('balmoral.name', name);
+
   ui.hide(ui.title);
-  ui.hide(ui.ending);
   started = true;
-  if (which && which !== mode) setMode(which);
   sound.start();
+  net.connect(name, chosenAvatar, {
+    p: [player.position.x, player.position.y, player.position.z],
+    y: player.yaw,
+  });
   grabPointer();
 }
 
-$('enterWalkBtn').addEventListener('click', () => enter('walkthrough'));
-$('enterNightBtn').addEventListener('click', () => enter('night'));
-$('againBtn').addEventListener('click', () => location.reload());
+$('enterBtn').addEventListener('click', enter);
+nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
 
-const resume = () => {
-  if (started && !running && !surreal?.finished) grabPointer();
-};
+const resume = () => { if (started && !running) grabPointer(); };
 renderer.domElement.addEventListener('click', resume);
 // The pause card sits above the canvas and would otherwise swallow the click
 // that is meant to dismiss it.
@@ -331,19 +288,18 @@ document.addEventListener('pointerlockchange', () => {
     sound.resume();
     clock.getDelta();          // drop the paused interval
     player?.clearLook();       // and any movement reported while unlocking
-  } else if (started && !surreal?.finished) {
+  } else if (started) {
     ui.show(ui.pause);
   }
 });
 
+// Look speed is a matter of taste and of mouse DPI, so it is tunable in place
+// and remembered. Shown as a 0-100 figure rather than radians per pixel.
 window.addEventListener('keydown', e => {
-  if (!player?.enabled) return;
-  if (e.code === 'KeyF') torchOn = !torchOn;
-  if (e.code === 'KeyM') setMode(mode === 'night' ? 'walkthrough' : 'night');
-  if (e.code === 'KeyE' && surreal.active) {
-    const lamp = surreal.lampInReach(camera);
-    if (lamp) surreal.takeLamp(lamp);
-  }
+  if (!player) return;
+  if (e.code !== 'BracketLeft' && e.code !== 'BracketRight') return;
+  const v = player.adjustSensitivity(e.code === 'BracketRight' ? 1 : -1);
+  ui.notice(`look speed ${Math.round((v / 0.0050) * 100)}`);
 });
 
 addEventListener('resize', () => {
@@ -356,51 +312,49 @@ addEventListener('resize', () => {
 
 // --------------------------------------------------------------------- loop
 
-let fpsAccum = 0, fpsFrames = 0;
+let fpsAccum = 0, fpsFrames = 0, lastCalls = 0;
 
 function frame() {
   requestAnimationFrame(frame);
 
   const dt = Math.min(clock.getDelta(), 0.05);
   if (!level) return;
+  renderer.info.reset();
 
+  // Other people keep moving whether or not our pointer is locked, so this
+  // runs outside the enabled check — otherwise everyone freezes on pause.
+  for (const r of remotes.values()) r.update(dt);
 
-  // Simulation is driven by the player being enabled rather than by pointer
-  // lock directly, so the world can also be stepped from the console.
   if (player.enabled) {
     player.update(dt);
-    surreal.update(dt, camera);
-    sound.update(dt, surreal.dread);
+    sound.update(dt, 0);
+    net.sendPose(player.position, player.yaw);
 
-    // Torch: fades rather than snaps, and stutters as the house takes hold.
-    const cfg = MODES[mode];
-    const want = torchOn ? 1 : 0;
-    torchLevel += (want - torchLevel) * Math.min(1, dt * 7);
-    const stutter = cfg.flicker && surreal.dread > 0.3 &&
-      Math.random() < dt * surreal.dread * 2.5 ? 0.15 : 1;
-    torch.intensity = torchLevel * cfg.torch * stutter;
-
-    const lamp = surreal.active ? surreal.lampInReach(camera) : null;
-    ui.crosshair.classList.toggle('active', !!lamp);
-    ui.setPrompt(lamp ? 'E — take the light' : null);
-
-    if (!surreal.active) {
-      const room = level.roomAt(player.position);
-      ui.meta.innerHTML =
-        `<span class="n">${cfg.label}</span><br>${room ? room.label.toLowerCase() : 'outside'}` +
-        `<br>M — after dark`;
-    } else {
-      const left = surreal.total - surreal.taken;
-      ui.meta.innerHTML = surreal.ending
-        ? 'the door is open'
-        : `lights burning <span class="n">${left}</span> / ${surreal.total}<br>cycle <span class="n">${surreal.cycle}</span>`;
-    }
+    const room = level.roomAt(player.position);
+    ui.room(room ? room.label : null);
+    ui.meta.innerHTML =
+      `<span class="n">${WALKTHROUGH.label}</span><br>${room ? room.label.toLowerCase() : 'outside'}`;
 
     fpsAccum += dt; fpsFrames++;
     if (fpsAccum > 0.5) {
       const fps = Math.round(fpsFrames / fpsAccum);
+
+      // Adaptive resolution. Cheaper than dropping geometry and invisible at
+      // walking pace: shave the render scale when we are missing frames, give
+      // it back when there is headroom. Hysteresis so it cannot oscillate.
+      if (fps < 50 && curDpr > MIN_DPR) {
+        curDpr = Math.max(MIN_DPR, curDpr - 0.15);
+        renderer.setPixelRatio(curDpr);
+        composer.setSize(innerWidth, innerHeight);
+      } else if (fps > 58 && curDpr < Math.min(devicePixelRatio, MAX_DPR)) {
+        curDpr = Math.min(Math.min(devicePixelRatio, MAX_DPR), curDpr + 0.05);
+        renderer.setPixelRatio(curDpr);
+        composer.setSize(innerWidth, innerHeight);
+      }
+
       ui.stats.textContent =
-        `${fps} fps · ${level.triangleCount.toLocaleString()} tris · dread ${surreal.dread.toFixed(2)}`;
+        `${fps} fps · ${lastCalls} draws · ` +
+        `${level.triangleCount.toLocaleString()} tris · ${curDpr.toFixed(2)}x`;
       fpsAccum = 0; fpsFrames = 0;
     }
   } else {
@@ -409,6 +363,7 @@ function frame() {
   }
 
   composer.render();
+  lastCalls = renderer.info.render.calls;
 }
 
 boot().then(frame).catch(err => {

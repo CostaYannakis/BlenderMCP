@@ -52,14 +52,18 @@ export class Player {
     this.lastStepDistance = 0;
     this.speedScale = 1;      // the house can slow you down
     this.gravity = -18;
-    this.lookSensitivity = 0.0021;
 
-    // Look input accumulated between frames.
+    // Radians per CSS pixel of mouse travel. Note "CSS pixel": pointer lock
+    // reports movementX in physical device pixels, so on a display running at
+    // 125% or 150% scaling — the Windows default on most laptops — the same
+    // hand movement produced 1.25-1.5x the turn. Normalising by devicePixelRatio
+    // in _onMouseMove makes the feel identical on every display.
+    this.lookSensitivity = Number(
+      globalThis.localStorage?.getItem('balmoral.sens')) || 0.0014;
+
+    // Look input accumulated between frames, applied whole in update().
     this._pendingYaw = 0;
     this._pendingPitch = 0;
-    // Seconds for a flick to be ~63% applied. Small enough to feel direct,
-    // large enough to smooth out uneven event batching.
-    this.lookResponse = 0.018;
 
     this.keys = Object.create(null);
     this.enabled = false;
@@ -86,20 +90,51 @@ export class Player {
     // one event at a low polling rate; the spikes are in the thousands. 500 px
     // is about 60 degrees in a single event — comfortably past anything a hand
     // produces, comfortably under a glitch.
-    const MAX_EVENT_DELTA = 500;
-    const clampDelta = v => Math.max(-MAX_EVENT_DELTA, Math.min(MAX_EVENT_DELTA, v || 0));
+    // Pointer lock emits occasional bogus deltas: one on the frame lock is
+    // acquired, and intermittently when the OS applies pointer acceleration or
+    // the compositor drops frames. They are the cause of the view snapping to a
+    // random direction. A fixed clamp alone cannot catch them, because a
+    // "small" spike of 150 px is still ~12 degrees in a single event while a
+    // real fast flick is only a few px per event at a 1000 Hz polling rate.
+    //
+    // So: a hard ceiling, plus rejection of anything wildly out of line with
+    // how the mouse has actually been moving over the last handful of events.
+    const MAX_EVENT_DELTA = 180;
+    const HISTORY = 12;
+    this._mag = [];
 
     this._onMouseMove = e => {
       if (!this.enabled) return;
-      // Accumulated here, applied once per frame in update(). Mouse events
-      // arrive in irregular bursts that do not line up with frames, so
-      // integrating them straight into the camera makes the rate of turn
-      // jitter with the event timing rather than the hand movement.
-      this._pendingYaw -= clampDelta(e.movementX) * this.lookSensitivity * this.lookFlip;
-      this._pendingPitch -= clampDelta(e.movementY) * this.lookSensitivity;
+      // Pointer lock's first events after acquisition are the worst offenders.
+      if (performance.now() < (this._settleUntil || 0)) return;
+
+      const mx = e.movementX || 0;
+      const my = e.movementY || 0;
+      const mag = Math.hypot(mx, my);
+
+      const h = this._mag;
+      if (h.length >= 4) {
+        const sorted = [...h].sort((a, b) => a - b);
+        const median = sorted[sorted.length >> 1];
+        // 6x the recent median, with a floor so slow, careful movement does not
+        // set a threshold so low that a normal flick trips it.
+        if (mag > Math.max(70, median * 6)) return;
+      }
+      h.push(mag);
+      if (h.length > HISTORY) h.shift();
+
+      // Accumulated here, applied whole once per frame in update(). Mouse
+      // events arrive in irregular bursts that do not line up with frames, so
+      // summing them and applying the total is what keeps the turn matched to
+      // the hand rather than to the event timing.
+      const dpr = globalThis.devicePixelRatio || 1;
+      const s = this.lookSensitivity / dpr;
+      const clamp = v => Math.max(-MAX_EVENT_DELTA, Math.min(MAX_EVENT_DELTA, v));
+      this._pendingYaw -= clamp(mx) * s * this.lookFlip;
+      this._pendingPitch -= clamp(my) * s;
     };
 
-    this.lookFlip = 1;   // surreal events invert this briefly
+    this.lookFlip = 1;   // look inversion; always 1 in the walkthrough
 
     window.addEventListener('keydown', this._onKeyDown);
     window.addEventListener('keyup', this._onKeyUp);
@@ -114,10 +149,20 @@ export class Player {
    * is an enclosed house with a roof, and a ray cast from well overhead finds
    * the roof first and buries the capsule in solid geometry.
    */
-  /** Drop any look input still in flight, so it cannot be applied later. */
+  /**
+   * Drop any look input still in flight, and ignore incoming events briefly.
+   *
+   * Called when pointer lock is acquired. Chrome reports a large bogus
+   * movementX/Y on the first event or two after locking - the delta from
+   * wherever the cursor happened to be - which lands as a hard snap of the
+   * view. The settle window swallows those, and clearing the history stops
+   * them poisoning the outlier median.
+   */
   clearLook() {
     this._pendingYaw = 0;
     this._pendingPitch = 0;
+    this._mag = [];
+    this._settleUntil = performance.now() + 180;
   }
 
   placeAt(worldPos, yaw = 0) {
@@ -143,26 +188,33 @@ export class Player {
   }
 
   /**
-   * Drain the accumulated look input into the camera angles.
+   * Apply the look input accumulated since the last frame, in full.
    *
-   * Exponential rather than all-at-once, and framed in seconds so the feel does
-   * not change with frame rate. The residue left each frame is tiny, so this
-   * reads as smoothing rather than lag.
+   * This used to drain exponentially towards the target, which sounds like
+   * smoothing but is not: mouse deltas are already a displacement, not a rate,
+   * so holding part of one back spreads a single flick across several frames as
+   * a decaying tail. At a variable frame rate the size of that tail changes
+   * frame to frame, which is what read as jerk. Summing the events and applying
+   * the total is exactly 1:1 with the hand and cannot judder on its own.
    */
   _applyLook(dt) {
-    const k = 1 - Math.exp(-dt / this.lookResponse);
-
-    const dy = this._pendingYaw * k;
-    const dp = this._pendingPitch * k;
-    this._pendingYaw -= dy;
-    this._pendingPitch -= dp;
-
-    this.yaw += dy;
-    this.pitch += dp;
+    this.yaw += this._pendingYaw;
+    this.pitch += this._pendingPitch;
+    this._pendingYaw = 0;
+    this._pendingPitch = 0;
 
     const limit = Math.PI / 2 - 0.02;
-    if (this.pitch > limit) { this.pitch = limit; this._pendingPitch = 0; }
-    if (this.pitch < -limit) { this.pitch = -limit; this._pendingPitch = 0; }
+    if (this.pitch > limit) this.pitch = limit;
+    if (this.pitch < -limit) this.pitch = -limit;
+  }
+
+  /** Nudge look speed. Returns the new value, persisted across sessions. */
+  adjustSensitivity(step) {
+    const lo = 0.0004, hi = 0.0050;
+    const next = Math.min(hi, Math.max(lo, this.lookSensitivity * (step > 0 ? 1.25 : 0.8)));
+    this.lookSensitivity = Math.round(next * 1e5) / 1e5;
+    try { globalThis.localStorage?.setItem('balmoral.sens', String(this.lookSensitivity)); } catch {}
+    return this.lookSensitivity;
   }
 
   update(dt) {

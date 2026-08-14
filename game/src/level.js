@@ -88,17 +88,52 @@ export class Level {
     const byMaterial = new Map();
     const originals = [];
 
+    const push = (material, geom) => {
+      const key = material.uuid;
+      if (!byMaterial.has(key)) byMaterial.set(key, { material, geoms: [] });
+      byMaterial.get(key).geoms.push(geom);
+    };
+
     scene.traverse(o => {
       if (!o.isMesh || !o.geometry || dynamic.has(o)) return;
-      // Multi-material meshes carry draw groups; leave those alone.
-      if (Array.isArray(o.material)) return;
 
-      const key = o.material.uuid;
-      if (!byMaterial.has(key)) byMaterial.set(key, { material: o.material, geoms: [] });
+      if (Array.isArray(o.material)) {
+        // Multi-material meshes carry draw groups. These used to be skipped,
+        // which quietly cost a draw call each — and every external wall is one,
+        // because brick sits on the outward face and plaster on the rest. That
+        // was ~60 unbatched meshes. Split each group out and batch it with its
+        // own material instead.
+        const src = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+        src.applyMatrix4(o.matrixWorld);
+        const groups = o.geometry.groups.length
+          ? o.geometry.groups
+          : [{ start: 0, count: Infinity, materialIndex: 0 }];
+
+        for (const grp of groups) {
+          const mat = o.material[grp.materialIndex];
+          if (!mat) continue;
+          const total = src.attributes.position.count;
+          const start = grp.start;
+          const count = Math.min(grp.count, total - start);
+          if (count <= 0) continue;
+
+          const sub = new THREE.BufferGeometry();
+          for (const name of Object.keys(src.attributes)) {
+            const a = src.attributes[name];
+            sub.setAttribute(name, new THREE.BufferAttribute(
+              a.array.slice(start * a.itemSize, (start + count) * a.itemSize),
+              a.itemSize, a.normalized));
+          }
+          push(mat, sub);
+        }
+        src.dispose();
+        originals.push(o);
+        return;
+      }
 
       const g = o.geometry.clone();
       g.applyMatrix4(o.matrixWorld);
-      byMaterial.get(key).geoms.push(g);
+      push(o.material, g);
       originals.push(o);
     });
 

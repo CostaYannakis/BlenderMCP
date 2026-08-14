@@ -13,6 +13,11 @@ balmoral_court*.blend
 # install tree is only required when re-vendoring.
 game/node_modules/
 
+# Local caches from the Cloudflare Worker tooling (the realtime room). The
+# worker source itself is tracked; these are build/state scratch.
+game/.wrangler/
+game/.partykit/
+
 # Local/editor noise
 __pycache__/
 *.py[cod]

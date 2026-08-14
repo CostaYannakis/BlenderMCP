@@ -7,3 +7,8 @@ bake
 
 # Local dev server. Vercel serves the static files itself.
 serve.mjs
+
+# The realtime room runs on Cloudflare Workers, not Vercel — Vercel functions
+# cannot hold a WebSocket open. Deployed separately with `npx wrangler deploy`.
+worker
+wrangler.toml

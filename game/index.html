@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BALMORAL — 3:33</title>
+<title>Balmoral — Walkthrough</title>
 <style>
   :root {
-    --ink: #c8ccd4;
-    --dim: #6a707d;
-    --warm: #e8b784;
+    --ink: #d2d6dd;
+    --dim: #79808d;
+    --warm: #c99b6d;
   }
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0; height: 100%; overflow: hidden;
-    background: #000; color: var(--ink);
-    font-family: "Courier New", ui-monospace, monospace;
+    background: #10131a; color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     cursor: default;
   }
   canvas { display: block; }
@@ -25,44 +25,39 @@
     display: flex; align-items: center; justify-content: center;
     flex-direction: column;
     z-index: 10;
-    transition: opacity .8s ease;
+    transition: opacity .6s ease;
   }
   .hidden { opacity: 0; pointer-events: none; }
 
-  #loading { background: #000; gap: 1.5rem; }
+  #loading { background: #10131a; gap: 1.5rem; }
   #loading .bar {
-    width: min(320px, 60vw); height: 1px; background: #1c1f26; position: relative;
+    width: min(320px, 60vw); height: 2px; background: #232833; position: relative;
+    border-radius: 2px; overflow: hidden;
   }
   #loading .bar i {
     position: absolute; inset: 0 auto 0 0; width: 0%; background: var(--warm);
     transition: width .25s ease;
   }
-  #loading .msg { font-size: .7rem; letter-spacing: .35em; color: var(--dim); text-transform: uppercase; }
+  #loading .msg { font-size: .72rem; letter-spacing: .22em; color: var(--dim); text-transform: uppercase; }
 
-  #title { background: radial-gradient(ellipse at center, #08090c 0%, #000 70%); gap: 2rem; }
+  #title { background: radial-gradient(ellipse at center, #171b24 0%, #0c0e13 70%); gap: 1.4rem; }
   #title h1 {
-    margin: 0; font-size: clamp(2.5rem, 9vw, 6rem); font-weight: 400;
-    letter-spacing: .5em; text-indent: .5em;
-    color: #e6e2da;
-    text-shadow: 0 0 40px rgba(232,183,132,.25);
+    margin: 0; font-size: clamp(2.2rem, 8vw, 4.5rem); font-weight: 300;
+    letter-spacing: .28em; text-indent: .28em; color: #eae6df;
   }
-  #title .sub { font-size: .75rem; letter-spacing: .4em; color: var(--dim); text-transform: uppercase; }
+  #title .sub { font-size: .78rem; letter-spacing: .24em; color: var(--dim); text-transform: uppercase; }
   #title .keys {
-    font-size: .7rem; line-height: 2.2; color: #4c5260; letter-spacing: .18em;
-    text-align: center; margin-top: 1rem;
+    font-size: .74rem; line-height: 2.1; color: #737a88; letter-spacing: .06em;
+    text-align: center; margin-top: .4rem;
   }
-  #title .keys b { color: #8d94a3; font-weight: 400; }
+  #title .keys b { color: #aab1bf; font-weight: 500; }
   .enter {
-    margin-top: 1rem; padding: .9rem 2.4rem; border: 1px solid #2b303a;
-    font-size: .7rem; letter-spacing: .35em; text-transform: uppercase;
+    margin-top: .6rem; padding: .85rem 2.4rem; border: 1px solid #333a47;
+    font-size: .74rem; letter-spacing: .2em; text-transform: uppercase;
     color: var(--warm); cursor: pointer; background: transparent;
-    font-family: inherit; transition: all .3s ease;
+    font-family: inherit; border-radius: 3px; transition: all .25s ease;
   }
-  .enter:hover { background: rgba(232,183,132,.06); border-color: #4a4034; }
-  .enter.ghost { color: #6a707d; }
-  .enter.ghost:hover { color: #9aa1b0; background: rgba(120,127,141,.05); }
-  .choices { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
-  #title .warn { font-size: .6rem; letter-spacing: .2em; color: #3a3f4a; margin-top: .5rem; }
+  .enter:hover { background: rgba(201,155,109,.08); border-color: #5a4a38; }
 
   /* ---------- hud ---------- */
   #hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
@@ -70,65 +65,66 @@
   #crosshair {
     position: absolute; left: 50%; top: 50%; width: 3px; height: 3px;
     margin: -1.5px 0 0 -1.5px; border-radius: 50%;
-    background: rgba(200,204,212,.35);
-    transition: all .4s ease;
+    background: rgba(210,214,221,.3);
   }
-  #crosshair.active { background: var(--warm); box-shadow: 0 0 8px var(--warm); transform: scale(2.2); }
 
   #room {
-    position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%);
-    font-size: .7rem; letter-spacing: .45em; text-transform: uppercase;
-    color: rgba(200,204,212,.5); opacity: 0; transition: opacity 1.2s ease;
-    white-space: nowrap; text-shadow: 0 0 20px #000;
+    position: absolute; left: 50%; bottom: 9%; transform: translateX(-50%);
+    font-size: .74rem; letter-spacing: .3em; text-transform: uppercase;
+    color: rgba(210,214,221,.55); opacity: 0; transition: opacity .9s ease;
+    white-space: nowrap; text-shadow: 0 1px 12px rgba(0,0,0,.8);
   }
   #room.show { opacity: 1; }
-  #room.wrong { color: rgba(232,120,120,.75); }
 
-  #prompt {
-    position: absolute; left: 50%; top: 56%; transform: translateX(-50%);
-    font-size: .68rem; letter-spacing: .3em; text-transform: uppercase;
-    color: rgba(232,183,132,.85); opacity: 0; transition: opacity .3s ease;
-    white-space: nowrap; text-shadow: 0 0 16px #000;
+  #notice {
+    position: absolute; left: 50%; bottom: 15%; transform: translateX(-50%);
+    font-size: .7rem; letter-spacing: .18em; text-transform: uppercase;
+    color: rgba(201,155,109,.9); opacity: 0; transition: opacity .25s ease;
+    white-space: nowrap; text-shadow: 0 1px 12px rgba(0,0,0,.8);
   }
-  #prompt.show { opacity: 1; }
+  #notice.show { opacity: 1; }
 
-  #whisper {
-    position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%);
-    font-size: .78rem; letter-spacing: .12em; color: rgba(210,214,222,.82);
-    opacity: 0; transition: opacity 1.4s ease; max-width: 70vw; text-align: center;
-    text-shadow: 0 0 18px #000, 0 0 4px #000; font-style: italic;
+  #presence {
+    position: absolute; right: 1.5rem; bottom: 1.3rem;
+    font-size: .64rem; letter-spacing: .16em; text-transform: uppercase;
+    color: rgba(140,147,160,.6);
   }
-  #whisper.show { opacity: 1; }
+
+  /* ---------- who you are ---------- */
+  .who { display: flex; flex-direction: column; align-items: center; gap: .9rem; margin-top: .4rem; }
+  #nameInput {
+    background: rgba(255,255,255,.04); border: 1px solid #333a47; border-radius: 3px;
+    color: var(--ink); font-family: inherit; font-size: .82rem; letter-spacing: .08em;
+    padding: .6rem 1rem; text-align: center; width: 15rem; outline: none;
+  }
+  #nameInput:focus { border-color: #5a4a38; }
+  #nameInput::placeholder { color: #5c6373; }
+  .swatches { display: flex; gap: .55rem; }
+  .swatch {
+    width: 1.55rem; height: 1.55rem; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; padding: 0; transition: all .18s ease;
+    opacity: .55;
+  }
+  .swatch:hover { opacity: .85; transform: scale(1.08); }
+  .swatch.on { opacity: 1; border-color: #e7e3db; transform: scale(1.12); }
+  .share { font-size: .64rem; letter-spacing: .12em; color: #5c6373; margin-top: .2rem; }
 
   #meta {
-    position: absolute; left: 1.6rem; top: 1.4rem;
-    font-size: .62rem; letter-spacing: .28em; color: rgba(120,127,141,.55);
-    line-height: 2; text-transform: uppercase;
+    position: absolute; left: 1.5rem; top: 1.3rem;
+    font-size: .66rem; letter-spacing: .16em; color: rgba(140,147,160,.6);
+    line-height: 1.9; text-transform: uppercase;
   }
-  #meta .n { color: rgba(232,183,132,.8); }
+  #meta .n { color: rgba(201,155,109,.85); }
 
   #stats {
-    position: absolute; right: 1.6rem; top: 1.4rem;
-    font-size: .58rem; letter-spacing: .18em; color: rgba(90,96,108,.5);
-    text-align: right; line-height: 1.9;
+    position: absolute; right: 1.5rem; top: 1.3rem;
+    font-size: .62rem; letter-spacing: .1em; color: rgba(110,116,128,.55);
+    text-align: right; line-height: 1.8;
   }
 
-  /* full-screen colour flashes for surreal beats */
-  #flash {
-    position: fixed; inset: 0; z-index: 6; pointer-events: none;
-    background: #fff; opacity: 0; mix-blend-mode: screen;
-  }
-
-  #pause { background: rgba(0,0,0,.86); gap: 1.2rem; }
-  #pause h2 { margin: 0; font-size: 1rem; letter-spacing: .5em; font-weight: 400; color: #9aa1b0; }
-  #pause .hint { font-size: .65rem; letter-spacing: .3em; color: #4c5260; }
-
-  #ending { background: #000; gap: 1.8rem; }
-  #ending h2 {
-    margin: 0; font-size: clamp(1.2rem,4vw,2rem); font-weight: 400;
-    letter-spacing: .45em; color: #d8d4cc;
-  }
-  #ending p { font-size: .7rem; letter-spacing: .25em; color: var(--dim); max-width: 34ch; text-align: center; line-height: 2.4; }
+  #pause { background: rgba(12,14,19,.88); gap: 1rem; }
+  #pause h2 { margin: 0; font-size: 1rem; letter-spacing: .3em; font-weight: 400; color: #aab1bf; }
+  #pause .hint { font-size: .7rem; letter-spacing: .18em; color: #5c6373; }
 </style>
 </head>
 <body>
@@ -137,12 +133,10 @@
   <div id="crosshair"></div>
   <div id="meta"></div>
   <div id="stats"></div>
-  <div id="prompt"></div>
   <div id="room"></div>
-  <div id="whisper"></div>
+  <div id="notice"></div>
+  <div id="presence"></div>
 </div>
-
-<div id="flash"></div>
 
 <div class="layer" id="loading">
   <div class="msg" id="loadMsg">opening the house</div>
@@ -151,27 +145,24 @@
 
 <div class="layer hidden" id="title">
   <h1>BALMORAL</h1>
-  <div class="sub">a house that does not end</div>
+  <div class="sub">first-person walkthrough</div>
   <div class="keys">
-    <b>W A S D</b> move &nbsp;·&nbsp; <b>MOUSE</b> look &nbsp;·&nbsp; <b>SHIFT</b> run &nbsp;·&nbsp; <b>C</b> crouch<br>
-    <b>F</b> torch &nbsp;·&nbsp; <b>M</b> switch mode &nbsp;·&nbsp; <b>E</b> take a light &nbsp;·&nbsp; <b>ESC</b> stop
+    <b>W A S D</b> move &nbsp;·&nbsp; <b>MOUSE</b> look &nbsp;·&nbsp; <b>SHIFT</b> run<br>
+    <b>C</b> crouch &nbsp;·&nbsp; <b>[ ]</b> look speed &nbsp;·&nbsp; <b>ESC</b> release the pointer
   </div>
-  <div class="choices">
-    <button class="enter" id="enterWalkBtn">walk through</button>
-    <button class="enter ghost" id="enterNightBtn">after dark</button>
+
+  <div class="who">
+    <input id="nameInput" maxlength="18" placeholder="your name" autocomplete="off" spellcheck="false">
+    <div id="swatches" class="swatches"></div>
   </div>
-  <div class="warn">daylight walkthrough, or the version that is not · headphones recommended</div>
+
+  <button class="enter" id="enterBtn">walk through</button>
+  <div class="share">share the link and up to 6 of you can walk it together</div>
 </div>
 
 <div class="layer hidden" id="pause">
-  <h2>STILL</h2>
+  <h2>PAUSED</h2>
   <div class="hint">click to continue</div>
-</div>
-
-<div class="layer hidden" id="ending">
-  <h2 id="endTitle"></h2>
-  <p id="endText"></p>
-  <button class="enter" id="againBtn">again</button>
 </div>
 
 <script type="importmap">

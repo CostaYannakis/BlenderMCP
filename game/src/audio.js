@@ -11,7 +11,14 @@ export class Sound {
     this.dread = 0;        // 0..1, raised by the surreal layer
   }
 
-  start() {
+  /**
+   * @param {object} [opts]
+   * @param {boolean} [opts.ambient=false] Build the drone, room tone and the
+   *   scheduled ambient events. That layer belonged to the night mode; the
+   *   walkthrough wants footsteps and the room reverb only.
+   */
+  start({ ambient = false } = {}) {
+    this.ambient = ambient;
     if (this.ctx) {
       if (this.ctx.state === 'suspended') this.ctx.resume();
       return;
@@ -48,14 +55,16 @@ export class Sound {
 
     this.noiseBuffer = this._noise(4);
 
-    this._buildDrone();
-    this._buildRoomTone();
+    if (ambient) {
+      this._buildDrone();
+      this._buildRoomTone();
+    }
 
     // Fade the world in rather than punching it on.
     this.master.gain.setTargetAtTime(0.85, ctx.currentTime, 1.6);
 
     this.ready = true;
-    this._scheduleAmbient();
+    if (ambient) this._scheduleAmbient();
   }
 
   suspend() { this.ctx?.suspend(); }
@@ -377,6 +386,7 @@ export class Sound {
   update(dt, dread) {
     if (!this.ready) return;
     this.dread = dread;
+    if (!this.ambient) return;      // nothing to modulate without the drone
     const t = this.ctx.currentTime;
 
     // The drone rises and opens up as things get worse.
