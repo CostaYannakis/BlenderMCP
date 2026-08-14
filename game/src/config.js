@@ -14,7 +14,7 @@ const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 
 export const PARTY_HOST = isLocal
   ? '127.0.0.1:8787'                                  // npx wrangler dev
-  : '';                                               // <-- paste deployed host
+  : 'balmoral-room.balmoralcrt.workers.dev';          // npx wrangler deploy
 
 /** Everyone opening the same ?room= shares a visit. */
 export const ROOM = new URLSearchParams(location.search).get('room') || 'balmoral';
