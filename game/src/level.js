@@ -15,6 +15,8 @@ export function fromBlender(p) {
 const GLASS_MATERIALS = /GLASS/i;
 const MIRROR_MATERIALS = /MIRROR/i;
 const FOLIAGE_MATERIALS = /FOLIAGE|LAWN|GRASS/i;
+/** Cat parts stay as separate nodes: the browser animates them individually. */
+const CAT_PART = /^CAT_/i;
 
 /** Rooms the player can be "in", derived from the baked practical lights. */
 const ROOM_LABELS = {
@@ -39,6 +41,7 @@ export class Level {
     this.rooms = [];           // { key, label, pos }
     this.doors = [];           // door leaves we can swing open
     this.movable = [];         // meshes the house is allowed to rearrange
+    this.catParts = [];        // CAT_* nodes, kept unmerged so they can animate
     this.data = null;
   }
 
@@ -96,6 +99,9 @@ export class Level {
 
     scene.traverse(o => {
       if (!o.isMesh || !o.geometry || dynamic.has(o)) return;
+      // Merging the cat into a static batch would weld it to the floor and
+      // destroy the per-limb nodes the walk cycle rotates.
+      if (CAT_PART.test(o.name)) { this.catParts.push(o); return; }
 
       if (Array.isArray(o.material)) {
         // Multi-material meshes carry draw groups. These used to be skipped,
@@ -248,6 +254,9 @@ export class Level {
       const matName = (Array.isArray(o.material) ? o.material[0] : o.material)?.name || '';
       // Glass panes still block you (they are windows), but leaves do not.
       if (FOLIAGE_MATERIALS.test(matName)) return;
+      // The cat walks around; baking it into the static collision mesh would
+      // leave a cat-shaped obstacle standing wherever it happened to start.
+      if (CAT_PART.test(o.name)) return;
 
       // De-indexing everything guarantees the uniform layout mergeGeometries
       // needs, whatever mix of indexed and non-indexed the GLB arrived with.

@@ -6,6 +6,7 @@ import { buildComposer } from './post.js';
 import { WALKTHROUGH, applyMode } from './modes.js';
 import { Net } from './net.js';
 import { AVATARS, RemotePlayer } from './avatars.js';
+import { Cat } from './cat.js';
 import { PARTY_HOST, ROOM, MAX_PLAYERS } from './config.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
@@ -127,7 +128,7 @@ renderer.info.autoReset = false;
 // ------------------------------------------------------------------- state
 
 const sound = new Sound();
-let level, player;
+let level, player, cat;
 let running = false, started = false;
 const clock = new THREE.Clock();
 
@@ -189,6 +190,8 @@ async function boot() {
 
   ui.progress(0.85, 'setting the lights');
 
+  cat = new Cat(level.catParts, level.root, level.collider);
+
   player = new Player(level.collider, camera);
   player.placeAt(fromBlender(SPAWN_BLENDER), SPAWN_YAW);
   player.onFootstep = i => sound.footstep(i);
@@ -201,7 +204,7 @@ async function boot() {
   bakeSunShadow();
 
   // Handle for debugging from the console.
-  window.__balmoral = { THREE, renderer, scene, camera, level, player, sound, ui };
+  window.__balmoral = { THREE, renderer, scene, camera, level, player, sound, ui, cat };
 
   ui.progress(1, 'ready');
   ui.stats.textContent =
@@ -324,6 +327,8 @@ function frame() {
   // Other people keep moving whether or not our pointer is locked, so this
   // runs outside the enabled check — otherwise everyone freezes on pause.
   for (const r of remotes.values()) r.update(dt);
+  // The cat keeps going whether or not the pointer is locked.
+  cat?.update(dt);
 
   if (player.enabled) {
     player.update(dt);

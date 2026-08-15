@@ -1207,6 +1207,95 @@ kitchen_joinery:
       (cream laminate, honey-oak timber, 150mm gloss wall tile) and switch the
       scene to Cycles with real lighting for the photoreal pass.
 
+family_room_furnishing:
+  marantz_audio_cabinet:
+    source_reference: Image/MArantzcabinet.jfif
+    collection: FIT_Family_Marantz
+    placement:
+      room: family_room
+      wall: WALL_GROUND_EXT_EAST_FAMILY_MEALS_004
+      wall_side: interior_west_face
+      center_y_m: 5.950
+      floor_top_z_m: -0.340
+      gap_to_wall_m: 0.015
+      status: provisional_centered_on_clear_family_room_east_wall
+    cabinet_dimensions_m:
+      depth_x: 0.440
+      width_y: 0.720
+      height_z: 1.080
+    assembly:
+      object_count: 41
+      contents: [black_open_cabinet, two_silver_marantz_components, turntable, open_dust_cover]
+      modeling_status: reference_based_first_pass
+    notes:
+      - Exact product models and dimensions were not visible in the source image.
+      - The assembly is intentionally separate from architectural collections and can be repositioned as one collection.
+
+bedroom_furnishing:
+  collection: FIT_Bedrooms
+  status: provisional_plan_based_clearance_layout
+  bed_dimensions_m:
+    australian_single: {width: 0.920, length: 1.880}
+    australian_queen: {width: 1.530, length: 2.030}
+  allocation:
+    BED1:
+      size: single
+      floor_zone: FLOOR_ZONE_BED1_001
+      center_xy_m: [-0.898, 6.200]
+      rotation_z_deg: -90
+      headboard_wall: WALL_GROUND_INT_BED1_FAMILY_003
+    BED2:
+      size: single
+      floor_zone: FLOOR_ZONE_BED2_001
+      center_xy_m: [-3.430, -3.319]
+      rotation_z_deg: 0
+      headboard_wall: bedroom_2_north_wall
+    BED3:
+      size: queen
+      floor_zone: FLOOR_ZONE_BED3_001
+      center_xy_m: [-3.209, -7.320]
+      rotation_z_deg: 90
+      headboard_wall: WALL_GROUND_EXT_WEST_BEDS_014
+      selection_reason: >-
+        This is the south-side bedroom with W10, the largest bedroom window
+        at approximately 3.2677 m wide. The west-wall headboard preserves the window.
+    BED4:
+      size: single
+      floor_zone: FLOOR_ZONE_BED4_001
+      center_xy_m: [1.550, -6.508]
+      rotation_z_deg: 0
+      headboard_wall: WALL_GROUND_INT_ENTRY_BED4_017
+  assembly_contents: [frame, headboard, mattress, duvet, foot_runner, pillows, legs]
+  notes:
+    - Bed positions preserve the plan-traced door openings and primary circulation paths.
+    - Wardrobe joinery is not yet modeled, so BED2 and BED3 clearances were reserved from the floor-plan symbols.
+
+meals_furnishing:
+  round_brown_table:
+    collection: FIT_Meals_Round_Table
+    room: meals
+    location_context: southeast_corner_opposite_kitchen_where_windows_W05_and_W14_meet
+    center_xy_m: [4.423, 1.620]
+    floor_top_z_m: 0.000
+    dimensions_m:
+      tabletop_diameter: 1.100
+      overall_height: 0.750
+      top_thickness: 0.060
+    construction: round_walnut_top_with_slim_dark_metal_pedestal_and_disc_foot
+    material: MAT_MEALS_TABLE_WALNUT
+    pedestal:
+      material: MAT_MEALS_TABLE_METAL_BASE
+      column_diameter_m: 0.130
+      foot_diameter_m: 0.440
+      refinement: user_requested_smaller_profile_metal_base
+    chair_planning:
+      chairs_modeled: false
+      reserved_clearance_beyond_table_edge_m: 0.650
+      east_window_wall_clearance_m: 0.650
+      south_window_wall_clearance_m: 0.650
+      clearance_object: MEALS_TABLE_CHAIR_CLEARANCE
+    status: user_refined_closer_to_corner_with_compact_metal_base
+
 unresolved_inputs:
   - jurisdiction
   - confirmed_plan_scale
