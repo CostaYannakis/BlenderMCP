@@ -24,3 +24,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+
+# Individual walk-cycle frames; the assembled gif and sheet are kept.
+renders/cat_walk/frame_*.png
