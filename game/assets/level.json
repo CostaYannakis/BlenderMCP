@@ -1,240 +1,745 @@
 {
  "name": "Balmoral",
- "source": "balmoral_house_build2.blend",
+ "source": "balmoral_house_architect.blend",
  "up": "Y_after_gltf_conversion",
  "lights": [
   {
    "name": "BATH_LIGHT_CEILING",
    "pos": [
-    -2.874,
-    -1.083,
-    2.15
+    -3.1,
+    -1.2,
+    2.36
    ],
-   "type": "POINT",
-   "energy": 40.0,
+   "type": "AREA",
+   "energy": 55.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.96,
+    0.9
    ],
    "room": "bath_ceiling"
   },
   {
    "name": "DUSK_INT_BED1",
    "pos": [
-    -1.339,
-    6.201,
+    -1.4,
+    6.3,
     2.15
    ],
    "type": "POINT",
-   "energy": 40.0,
+   "energy": 119.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.66,
+    0.38
    ],
    "room": "bed1"
   },
   {
    "name": "DUSK_INT_BED3",
    "pos": [
-    1.26,
-    -7.028,
+    -2.3,
+    -8.2,
     2.15
    ],
    "type": "POINT",
-   "energy": 40.0,
+   "energy": 119.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.66,
+    0.38
    ],
    "room": "bed3"
   },
   {
    "name": "DUSK_INT_BED4",
    "pos": [
-    -2.362,
-    -7.382,
+    1.26,
+    -7.05,
     2.15
    ],
    "type": "POINT",
-   "energy": 40.0,
+   "energy": 153.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.66,
+    0.38
    ],
    "room": "bed4"
   },
   {
    "name": "DUSK_INT_ENTRY",
    "pos": [
-    0.984,
-    -4.469,
+    1.2,
+    -4.5,
     2.15
    ],
    "type": "POINT",
-   "energy": 40.0,
+   "energy": 136.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.66,
+    0.38
    ],
    "room": "entry"
   },
   {
    "name": "DUSK_INT_FAMILY",
    "pos": [
-    2.953,
-    5.807,
-    2.15
+    3.0,
+    5.9,
+    2.05
    ],
    "type": "POINT",
-   "energy": 40.0,
+   "energy": 204.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.66,
+    0.38
    ],
    "room": "family"
   },
   {
    "name": "DUSK_INT_HALL",
    "pos": [
-    -0.787,
-    -3.72,
+    -3.0,
+    -4.0,
     2.15
    ],
    "type": "POINT",
-   "energy": 40.0,
+   "energy": 102.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.66,
+    0.38
    ],
    "room": "hall"
   },
   {
    "name": "DUSK_INT_KITCHEN",
    "pos": [
-    0.709,
-    1.713,
+    0.8,
+    1.7,
     2.15
    ],
    "type": "POINT",
-   "energy": 40.0,
+   "energy": 153.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.66,
+    0.38
    ],
    "room": "kitchen"
   },
   {
    "name": "DUSK_INT_LOUNGE_A",
    "pos": [
-    1.181,
-    -1.673,
+    3.6,
+    -1.6,
     2.15
    ],
    "type": "POINT",
-   "energy": 40.0,
+   "energy": 187.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.66,
+    0.38
    ],
    "room": "lounge_a"
   },
   {
    "name": "DUSK_INT_LOUNGE_B",
    "pos": [
-    3.543,
-    -1.673,
+    3.6,
+    0.0,
     2.15
    ],
    "type": "POINT",
-   "energy": 40.0,
+   "energy": 136.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.66,
+    0.38
    ],
    "room": "lounge_b"
   },
   {
    "name": "DUSK_INT_MEALS",
    "pos": [
-    4.213,
-    1.791,
+    4.2,
+    1.8,
     2.15
    ],
    "type": "POINT",
-   "energy": 40.0,
+   "energy": 170.0,
    "color": [
     1.0,
-    0.78,
-    0.55
+    0.66,
+    0.38
    ],
    "room": "meals"
+  },
+  {
+   "name": "DUSK_LIGHT_CORNER",
+   "pos": [
+    3.02,
+    -5.52,
+    2.0
+   ],
+   "type": "POINT",
+   "energy": 45.0,
+   "color": [
+    1.0,
+    0.74,
+    0.5
+   ],
+   "room": "dusk_light_corner"
+  },
+  {
+   "name": "DUSK_LIGHT_ENTRY",
+   "pos": [
+    2.44,
+    -3.94,
+    2.0
+   ],
+   "type": "POINT",
+   "energy": 45.0,
+   "color": [
+    1.0,
+    0.74,
+    0.5
+   ],
+   "room": "dusk_light_entry"
   }
  ],
- "openings": [],
- "cameras": {
-  "CAM_BATH": {
-   "pos": [
-    -4.15,
-    -0.45,
-    1.62
+ "openings": [
+  {
+   "name": "CUT_DOOR_D01",
+   "min": [
+    -2.7559,
+    7.9356,
+    -0.05
    ],
-   "yaw": -0.588
+   "max": [
+    -2.0472,
+    8.2456,
+    2.04
+   ],
+   "kind": "wall"
   },
-  "CAM_DETAIL": {
+  {
+   "name": "CUT_DOOR_D02",
+   "min": [
+    -0.5512,
+    7.9356,
+    -0.05
+   ],
+   "max": [
+    0.1181,
+    8.2456,
+    2.04
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_DOOR_D03",
+   "min": [
+    -1.9685,
+    4.1954,
+    -0.05
+   ],
+   "max": [
+    -1.1417,
+    4.5054,
+    2.04
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_DOOR_D04",
+   "min": [
+    -4.4094,
+    3.023,
+    -0.05
+   ],
+   "max": [
+    -3.6614,
+    3.473,
+    2.04
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_DOOR_D05",
+   "min": [
+    -3.189,
+    0.8489,
+    -0.05
+   ],
+   "max": [
+    -2.5197,
+    1.1589,
+    2.04
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_DOOR_D06",
+   "min": [
+    -1.454,
+    -1.7,
+    -0.05
+   ],
+   "max": [
+    -1.144,
+    -1.07,
+    2.04
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_DOOR_D07",
+   "min": [
+    -1.4542,
+    -3.2087,
+    -0.05
+   ],
+   "max": [
+    -1.1442,
+    -2.3425,
+    2.04
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_DOOR_D08",
+   "min": [
+    -1.2992,
+    -5.5684,
+    -0.05
+   ],
+   "max": [
+    -0.315,
+    -5.2584,
+    2.04
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_DOOR_D09",
+   "min": [
+    -0.2362,
+    -5.5684,
+    -0.05
+   ],
+   "max": [
+    0.748,
+    -5.2584,
+    2.04
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_DOOR_D10",
+   "min": [
+    1.9404,
+    -4.9016,
+    -0.05
+   ],
+   "max": [
+    2.3904,
+    -4.0748,
+    2.04
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_DOOR_D11",
+   "min": [
+    0.5118,
+    7.8656,
+    -0.44
+   ],
+   "max": [
+    2.7953,
+    8.3156,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_DOOR_D12",
+   "min": [
+    3.0709,
+    7.8656,
+    -0.44
+   ],
+   "max": [
+    5.7087,
+    8.3156,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_FLOOR_FAMILY_DROP_001",
+   "min": [
+    0.1969,
+    3.7977,
+    -0.6
+   ],
+   "max": [
+    5.748,
+    8.0906,
+    0.4
+   ],
+   "kind": "floor"
+  },
+  {
+   "name": "CUT_FLOOR_FAMILY_HALL_STEP_01",
+   "min": [
+    0.0591,
+    3.2712,
+    -0.6
+   ],
+   "max": [
+    0.3332,
+    4.3373,
+    0.4
+   ],
+   "kind": "floor"
+  },
+  {
+   "name": "CUT_FLOOR_FAMILY_HALL_STEP_02",
+   "min": [
+    0.3332,
+    3.2521,
+    -0.6
+   ],
+   "max": [
+    0.6073,
+    4.0395,
+    0.4
+   ],
+   "kind": "floor"
+  },
+  {
+   "name": "CUT_FLOOR_FAMILY_LONG_STEPS_001",
+   "min": [
+    2.7165,
+    3.2374,
+    -0.6
+   ],
+   "max": [
+    5.748,
+    3.7977,
+    0.4
+   ],
+   "kind": "floor"
+  },
+  {
+   "name": "CUT_OPENING_P01",
+   "min": [
+    2.126,
+    0.0222,
+    1.0
+   ],
+   "max": [
+    2.9528,
+    0.3322,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_OPENING_P02",
+   "min": [
+    0.3543,
+    3.3686,
+    1.0
+   ],
+   "max": [
+    1.4567,
+    3.6786,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W01",
+   "min": [
+    -1.4567,
+    9.2041,
+    1.5
+   ],
+   "max": [
+    -0.9055,
+    9.6541,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W02",
+   "min": [
+    -3.0203,
+    5.0197,
+    0.45
+   ],
+   "max": [
+    -2.5703,
+    7.1457,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W05",
+   "min": [
+    5.523,
+    0.11,
+    0.45
+   ],
+   "max": [
+    5.973,
+    2.146,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W06",
+   "min": [
+    4.5781,
+    -3.75,
+    0.45
+   ],
+   "max": [
+    5.0281,
+    -1.358,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W07",
+   "min": [
+    2.913,
+    -3.788,
+    0.45
+   ],
+   "max": [
+    4.99,
+    -3.338,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W08",
+   "min": [
+    2.5309,
+    -8.87,
+    0.45
+   ],
+   "max": [
+    2.9809,
+    -6.909,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W09",
+   "min": [
+    0.787,
+    -8.9061,
+    0.45
+   ],
+   "max": [
+    2.94,
+    -8.4561,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W10",
+   "min": [
+    -3.937,
+    -9.5754,
+    0.45
+   ],
+   "max": [
+    -0.6693,
+    -9.1254,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W11",
+   "min": [
+    -4.6738,
+    -4.8228,
+    0.45
+   ],
+   "max": [
+    -4.2238,
+    -2.815,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W12",
+   "min": [
+    -4.6738,
+    1.6732,
+    1.2
+   ],
+   "max": [
+    -4.2238,
+    2.6181,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W13",
+   "min": [
+    -4.6738,
+    0.256,
+    1.5
+   ],
+   "max": [
+    -4.2238,
+    0.728,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W14",
+   "min": [
+    4.958,
+    0.0703,
+    0.45
+   ],
+   "max": [
+    5.93,
+    0.5203,
+    2.1
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W15",
+   "min": [
+    -5.1,
+    -2.07,
+    0.95
+   ],
+   "max": [
+    -4.5,
+    -1.62,
+    2.05
+   ],
+   "kind": "wall"
+  },
+  {
+   "name": "CUT_WINDOW_W16",
+   "min": [
+    -5.1,
+    -0.205,
+    0.95
+   ],
+   "max": [
+    -4.5,
+    0.245,
+    2.05
+   ],
+   "kind": "wall"
+  }
+ ],
+ "cameras": {
+  "CAM_BATHROOM": {
    "pos": [
-    -1.0,
-    -6.0,
+    -1.95,
+    -1.36,
+    1.55
+   ],
+   "yaw": 3.0156
+  },
+  "CAM_EXTERIOR_FRONT": {
+   "pos": [
+    18.0,
+    -19.5,
+    2.6
+   ],
+   "yaw": 2.3533
+  },
+  "CAM_KITCHEN_CHECK": {
+   "pos": [
+    12.0,
+    -3.5,
+    1.2
+   ],
+   "yaw": 2.6117
+  },
+  "CAM_KITCHEN_FAMILY": {
+   "pos": [
+    5.28,
+    0.72,
     1.58
    ],
-   "yaw": -2.4756
+   "yaw": 2.2515
   },
-  "CAM_KITCHEN": {
+  "CAM_KITCHEN_HERO": {
    "pos": [
-    4.3,
-    1.05,
-    1.6
+    4.28,
+    1.22,
+    1.56
    ],
-   "yaw": 2.9275
+   "yaw": 2.771
   },
-  "CAM_PERSP": {
+  "CAM_THROUGH_VIEW": {
    "pos": [
-    17.0,
-    -18.5,
-    6.5
+    3.9,
+    -4.9,
+    1.58
    ],
-   "yaw": 2.3895
+   "yaw": 1.6087
   },
-  "CAM_PLAN_CHECK": {
+  "CAM_WALK": {
    "pos": [
-    0.0,
-    0.0,
-    25.0
+    3.1,
+    -2.6,
+    1.65
    ],
-   "yaw": 0.0
+   "yaw": 1.6263
+  },
+  "Camera": {
+   "pos": [
+    7.359,
+    -6.926,
+    4.958
+   ],
+   "yaw": 2.3857
   }
  },
  "rooms": [],
  "bounds": {
   "min": [
-   -25.0,
-   -25.0,
-   -2.34
+   -42.0,
+   -34.0,
+   -2.59
   ],
   "max": [
-   25.0,
-   25.0,
-   3.82
+   42.0,
+   32.0,
+   4.56
   ]
  },
- "approx_tris": 5302
+ "approx_tris": 107250
 }

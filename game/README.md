@@ -26,13 +26,20 @@ around a building and look at it. The room name appears as you enter each one.
 
 ## Source model
 
-Baked from **`../balmoral_house_build2.blend`**, a rebuild of the house traced
-directly from `Image/floorplan1.jpg` at 25.4 px/m. Walls are separate segments
-split at every opening rather than boolean-cut, so openings are real gaps with
-head and sill infills.
+Baked from **`../balmoral_house_architect.blend`** — the original detailed
+scene. It is heavier than the alternative below but looks considerably better:
+photo-derived brick, real timber floor and carpet, planting, ceiling
+downlights, deeper reveals.
+
+`../balmoral_house_build2.blend` is a later rebuild traced directly from
+`Image/floorplan1.jpg` at 25.4 px/m, with walls as separate segments split at
+every opening rather than boolean-cut. It is far lighter (~5k triangles vs
+~107k) and its plan geometry is more accurate — it corrected several opening
+positions the manifest had wrong — but it is much plainer. Bake it with
+`npm run bake:rebuild` if you want to compare.
 
 ```
-assets/balmoral.glb    326 meshes, ~4,000 triangles, 1K textures, 0.7 MB
+assets/balmoral.glb    371 meshes, ~107,000 triangles, 1K textures, 6.4 MB
 assets/level.json      lamp positions and room markers
 bake/bake_house.py     Blender -> GLB + level.json  (headless)
 bake/materials.py      rebuilds procedural materials as real textures
